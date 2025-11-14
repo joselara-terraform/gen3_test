@@ -7,10 +7,14 @@
 ## 🔧 Hardware Configuration
 
 ### Target Hardware
-- **NI cDAQ-9187** (Ethernet)
-  - 2x **NI-9253**: 4-channel analog current input (4-20mA) = 8 analog inputs
-  - 2x **NI-9485**: 8-channel relay outputs = 16 relays
+- **NI cDAQ-9187** (Ethernet: 192.168.0.108)
+  - Slot 1: **NI-9253** (8-channel analog current input, 4-20mA)
+  - Slot 2: **NI-9485** (8-channel relay output)
+  - Slot 3: **NI-9485** (8-channel relay output)
+  - Slot 4: **NI-9253** (8-channel analog current input, 4-20mA)
+  - **Total**: 16 analog inputs + 16 relay outputs
 - **Pico TC-08**: 8-channel thermocouple logger (USB)
+- **3x BGA244**: Binary gas analyzers (RS422/USB adapters)
 - **Single PSU**: Modbus RTU via RS485/USB adapter
 - **Windows Control Computer**: Brand new, all setup from scratch
 
@@ -90,12 +94,12 @@
 
 ### Phase 2: Hardware Interface Development (11-25)
 
-11. **Test NI cDAQ-9187 connectivity**
+11. ✅ **Test NI cDAQ-9187 connectivity**
     - Use existing test scripts to verify Ethernet connection
     - Detect cDAQ and all installed modules (2x NI-9253, 2x NI-9485)
     - Verify module slot assignments in NI MAX
 
-12. **Implement NI-9253 analog input reader**
+12. ✅ **Implement NI-9253 analog input reader**
     - Create `Gen3_AWE/hdw/ni_analog_http.py`
     - Read 8 channels (4 per module) at configurable rate (10-100Hz)
     - Scale 4-20mA to engineering units using devices.yaml config
