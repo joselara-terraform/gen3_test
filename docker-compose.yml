@@ -1,0 +1,55 @@
+services:
+  influxdb:
+    image: influxdb:2.7
+    container_name: electrolyzer_influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./data/influxdb:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=terraformer
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_ADMIN_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=electrolyzer
+      - DOCKER_INFLUXDB_INIT_BUCKET=electrolyzer_data
+      - DOCKER_INFLUXDB_INIT_RETENTION=30d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+    networks:
+      - electrolyzer_network
+
+  telegraf:
+    image: telegraf:1.28
+    container_name: electrolyzer_telegraf
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./MK1_AWE/config/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - ./MK1_AWE/config/devices.yaml:/etc/telegraf/devices.yaml:ro
+      - ./MK1_AWE/hdw/BGA244.py:/scripts/BGA244.py:ro
+    environment:
+      - INFLUX_TOKEN=${INFLUXDB_ADMIN_TOKEN}
+    depends_on:
+      - influxdb
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: electrolyzer_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./MK1_AWE/config/grafana.ini:/etc/grafana/grafana.ini:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=terraformer
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    depends_on:
+      - influxdb
+    networks:
+      - electrolyzer_network
+
+networks:
+  electrolyzer_network:
+    driver: bridge

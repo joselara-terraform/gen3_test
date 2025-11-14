@@ -1,0 +1,395 @@
+# devices.yaml
+# MK1_AWE Hardware Configuration
+
+# IP Addresses
+devices:
+  RLM_30ch:
+    ip: 192.168.10.2
+    port: 502
+    protocol: modbus_tcp
+    slave_id: 1
+    channels: 30
+    interval: "1s"
+    timeout: "1s"
+    coils:
+      start_address: 0
+
+  MM01_8ch:
+    channels:
+      - {name: "PSU01", ip: 192.168.10.3}
+      - {name: "PSU02", ip: 192.168.10.4}
+      - {name: "PSU03", ip: 192.168.10.5}
+      - {name: "PSU04", ip: 192.168.10.6}
+      - {name: "PSU05", ip: 192.168.10.7}
+      - {name: "PSU06", ip: 192.168.10.8}
+      - {name: "PSU07", ip: 192.168.10.9}
+      - {name: "PSU08", ip: 192.168.10.10}
+
+  MM02_8ch:
+    channels:
+      - {name: "PSU09", ip: 192.168.10.11}
+      - {name: "PSU10", ip: 192.168.10.12}
+      - {name: "TCM", ip: 192.168.10.13}
+      - {name: "AIM", ip: 192.168.10.14}
+      - {name: "CVM", ip: 192.168.10.15}
+      - {name: "ch06", ip: 192.168.10.16}
+      - {name: "ch07", ip: 192.168.10.17}
+      - {name: "ch08", ip: 192.168.10.18}
+
+  RSM01_1ch:
+    ip: 192.168.10.19
+    port: 4196
+    device: "BGA01"
+
+  RSM02_1ch:
+    ip: 192.168.10.20
+    port: 4196
+    device: "BGA02"
+
+  LBJK:
+    ip: 192.168.10.21
+    port: 502
+    protocol: modbus_tcp
+    slave_id: 1
+
+modules:
+  RLM_30ch:
+    RL01:
+      name: "Contactor"
+      address: 0
+      type: "valve"
+      safety_contactor: true
+    RL02:
+      name: "O2 Purge"
+      address: 1
+      type: "valve"
+    RL03:
+      name: "H2 Purge"
+      address: 2
+      type: "valve"
+    RL04:
+      name: "Valve 4"
+      address: 3
+      type: "valve"
+    RL05:
+      name: "Valve 5"
+      address: 4
+      type: "valve"
+    RL06:
+      name: "Valve 6"
+      address: 5
+      type: "valve"
+    RL07:
+      name: "Valve 7"
+      address: 6
+      type: "valve"
+    RL08:
+      name: "Valve 8"
+      address: 7
+      type: "valve"
+    RL09:
+      name: "Valve 9"
+      address: 8
+      type: "valve"
+    RL10:
+      name: "Valve 10"
+      address: 9
+      type: "valve"
+    RL11:
+      name: "RL11"
+      address: 10
+      type: "relay"
+    RL12:
+      name: "RL12"
+      address: 11
+      type: "relay"
+    RL13:
+      name: "RL13"
+      address: 12
+      type: "relay"
+    RL14:
+      name: "RL14"
+      address: 13
+      type: "relay"
+    RL15:
+      name: "RL15"
+      address: 14
+      type: "relay"
+    RL16:
+      name: "Pump 1"
+      address: 15
+      type: "pump"
+    RL17:
+      name: "Pump 2"
+      address: 16
+      type: "pump"
+    RL18:
+      name: "RL18"
+      address: 17
+      type: "relay"
+    RL19:
+      name: "RL19"
+      address: 18
+      type: "relay"
+    RL20:
+      name: "RL20"
+      address: 19
+      type: "relay"
+    RL21:
+      name: "RL21"
+      address: 20
+      type: "relay"
+    RL22:
+      name: "RL22"
+      address: 21
+      type: "relay"
+    RL23:
+      name: "RL23"
+      address: 22
+      type: "relay"
+    RL24:
+      name: "RL24"
+      address: 23
+      type: "relay"
+    RL25:
+      name: "RL25"
+      address: 24
+      type: "relay"
+    RL26:
+      name: "RL26"
+      address: 25
+      type: "relay"
+    RL27:
+      name: "RL27"
+      address: 26
+      type: "relay"
+    RL28:
+      name: "RL28"
+      address: 27
+      type: "relay"
+    RL29:
+      name: "RL29"
+      address: 28
+      type: "relay"
+    RL30:
+      name: "RL30"
+      address: 29
+      type: "relay"
+
+  TCM_16ch:
+    slave_id: 1
+    interval: "5s"
+    timeout: "1s"
+    register_type: holding
+    data_type: UINT16
+    byte_order: AB
+    scale: 0.1
+    channels:
+      TC01: {address: 32}
+      TC02: {address: 33}
+      TC03: {address: 34}
+      TC04: {address: 35}
+      TC05: {address: 36}
+      TC06: {address: 37}
+      TC07: {address: 38}
+      TC08: {address: 39}
+      TC09: {address: 40}
+      TC10: {address: 41}
+      TC11: {address: 42}
+      TC12: {address: 43}
+      TC13: {address: 44}
+      TC14: {address: 45}
+      TC15: {address: 46}
+      TC16: {address: 47}
+
+  AIM_8ch:
+    slave_id: 1
+    interval: "10ms"
+    timeout: "20ms"
+    register_type: input
+    data_type: UFIXED
+    byte_order: AB
+    base_scale: 0.001
+    channels:
+      AI01:
+        address: 0
+        sensor_type: "pressure"
+        sensor_name: "O2 Pressure"
+        range_min: 4.0
+        range_max: 20.0
+        eng_min: 0.0
+        eng_max: 1.0
+        eng_unit: "PSI"
+      AI02:
+        address: 1
+        sensor_type: "pressure"
+        sensor_name: "H2 Pressure"
+        range_min: 4.0
+        range_max: 20.0
+        eng_min: 0.0
+        eng_max: 1.0
+        eng_unit: "PSI"
+      AI03:
+        address: 2
+        sensor_type: "current"
+        sensor_name: "Current"
+        range_min: 4.0
+        range_max: 20.0
+        eng_min: 0.0
+        eng_max: 150.0
+        eng_unit: "A"
+      AI04:
+        address: 3
+        sensor_type: "flowrate"
+        sensor_name: "H2 Flowrate"
+        range_min: 4.0
+        range_max: 20.0
+        eng_min: 0.0
+        eng_max: 10.0
+        eng_unit: "L/min"
+      AI05:
+        address: 4
+        sensor_type: "flowrate"
+        sensor_name: "O2 Flowrate"
+        range_min: 4.0
+        range_max: 20.0
+        eng_min: 0.0
+        eng_max: 50.0
+        eng_unit: "L/min"
+      AI06:
+        address: 5
+        sensor_type: "undefined"
+        sensor_name: "AI06"
+        range_min: 4.0
+        range_max: 20.0
+        eng_min: 0.0
+        eng_max: 20.0
+        eng_unit: "mA"
+      AI07:
+        address: 6
+        sensor_type: "undefined"
+        sensor_name: "AI07"
+        range_min: 4.0
+        range_max: 20.0
+        eng_min: 0.0
+        eng_max: 20.0
+        eng_unit: "mA"
+      AI08:
+        address: 7
+        sensor_type: "undefined"
+        sensor_name: "AI08"
+        range_min: 4.0
+        range_max: 20.0
+        eng_min: 0.0
+        eng_max: 20.0
+        eng_unit: "mA"
+
+  BGA01:
+    http_port: 8888
+    device_id: "BGA01"
+    interval: "100ms"
+    timeout: "80ms"
+    polling_rate: "10Hz"
+    gases:
+      primary: "1333-74-0"    # H2
+      secondary: "7782-44-7"  # O2
+      purge: "7727-37-9"     # N2
+
+  BGA02:
+    http_port: 8889
+    device_id: "BGA02"
+    interval: "100ms"
+    timeout: "80ms"
+    polling_rate: "10Hz"
+    gases:
+      primary: "7782-44-7"    # O2
+      secondary: "1333-74-0"  # H2
+      purge: "7727-37-9"     # N2
+
+# Reference data
+gas_reference:
+  "7782-44-7": "O2"
+  "1333-74-0": "H2"
+  "7727-37-9": "N2"
+
+# System Parameters
+system:
+  influxdb_url: "http://localhost:8086"
+  influxdb_org: "electrolyzer"
+  influxdb_bucket: "electrolyzer_data"
+  grafana_url: "http://localhost:3000"
+  
+# PSU Control Configuration
+psu_control:
+  mode: "gen2"  # Options: "gen2" (single PSU via LabJack) or "mk1" (10 PSUs via Modbus)
+  
+  # Gen2: LabJack T7 DAC control (small scale test rig, single module)
+  gen2:
+    device: "LBJK"           # References devices.LBJK for IP/port
+    dac_register: 1002       # DAC1 register address
+    dac_channel: "DAC1"      # DAC1 (0-5V range)
+    data_type: FLOAT32_BE    # Big-endian 32-bit float (2x 16-bit registers)
+    voltage_min: 0.0
+    voltage_max: 5.0         # DAC1 max voltage
+    current_min: 0.0
+    current_max: 100.0       # 0-5V → 0-100A linear
+    safe_current: 0.0        # Safe state: 0A
+    ramp_steps: 20           # Number of discrete ramp steps
+    ramp_step_duration: 6    # Duration of each step in seconds
+    profile_path: "profiles/solar_profile_1.csv"  # Current profile CSV path
+  
+  # MK1: Modbus PSU control (large scale test rig, >30 modules, 10 PSUs)
+  mk1:
+    enabled: true
+    
+    # Operational limits
+    voltage_min: 100.0       # Below 100V → force to 0V
+    voltage_max: 300.0       # Maximum voltage
+    current_min: 1.0         # Below 1A → force to 0A
+    current_max: 100.0       # Maximum current
+    power_max: 30000.0       # Maximum power (W)
+    safe_voltage: 0.0        # Safe state voltage
+    safe_current: 0.0        # Safe state current
+    
+    # Ramp parameters (same structure as Gen2)
+    ramp_steps: 20
+    ramp_step_duration: 6
+    profile_path: "profiles/solar_profile_1.csv"
+    
+    # PSU Register Map (Modbus RTU via MM01/MM02)
+    psu_registers:
+      # Read registers (Function 0x03 - Read Holding Registers)
+      read:
+        voltage:        { address: 0x0001, scale: 0.1, unit: "V" }    # Actual output voltage
+        current:        { address: 0x0002, scale: 0.1, unit: "A" }    # Actual output current
+        power:          { address: 0x0003, scale: 0.1, unit: "W" }    # Actual output power
+        capacity:       { address: 0x0004, scale: 0.1, unit: "Ah" }   # Capacity delivered
+        runtime:        { address: 0x0005, scale: 1.0, unit: "s" }    # Runtime
+        battery_v:      { address: 0x0006, scale: 0.1, unit: "V" }    # Battery voltage
+        sys_fault:      { address: 0x0007, scale: 1.0, unit: "" }     # System fault code
+        mod_fault:      { address: 0x0008, scale: 1.0, unit: "" }     # Module fault code
+        temperature:    { address: 0x0009, scale: 1.0, unit: "C" }    # Temperature
+        status:         { address: 0x000A, scale: 1.0, unit: "" }     # Status word
+        set_voltage_rb: { address: 0x000B, scale: 0.1, unit: "V" }    # Set voltage readback
+        set_current_rb: { address: 0x000C, scale: 0.1, unit: "A" }    # Set current readback
+        output_enable:  { address: 0x000D, scale: 1.0, unit: "" }     # Output enable status
+      
+      # Write registers (Function 0x06 - Write Single Register)
+      write:
+        set_voltage:    { address: 0x0101, scale: 0.1 }  # Command voltage (value ÷ 0.1)
+        set_current:    { address: 0x0102, scale: 0.1 }  # Command current (value ÷ 0.1)
+        enable_output:  { address: 0x0103, scale: 1.0 }  # Enable (1) / Disable (0)
+
+# Global Telegraf Settings
+telegraf:
+  agent:
+    interval: "5s"
+    round_interval: true
+    metric_batch_size: 1000
+    metric_buffer_limit: 10000
+    collection_jitter: "0s"
+    flush_interval: "1s"
+    flush_jitter: "0s"
+    precision: ""
+    hostname: "MK1_AWE"
+    omit_hostname: false

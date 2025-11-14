@@ -1,0 +1,21 @@
+# MK1_AWE Control GUI Dependencies
+# Python 3.9+
+
+# GUI Framework (compatible with Python 3.13)
+PySide6==6.8.0.2
+
+# Modbus TCP Client
+pymodbus==3.6.7
+
+# InfluxDB Client
+influxdb-client==1.43.0
+
+# YAML Configuration Parser
+PyYAML==6.0.2
+
+# HTTP Client
+requests==2.32.3
+
+# Retry/Backoff Logic
+tenacity==9.0.0
+
