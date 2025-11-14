@@ -106,7 +106,7 @@
     - Expose `/metrics` endpoint in InfluxDB line protocol
     - Handle errors gracefully (disconnections, out-of-range)
 
-13. **Implement NI-9485 relay control client**
+13. ✅ **Implement NI-9485 relay control client**
     - Create `Gen3_AWE/gui/ni_relay_client.py`
     - Functions: `set_relay(slot, channel, state)`, `get_relay_status()`
     - Support 16 relays across 2 modules
