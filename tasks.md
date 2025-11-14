@@ -25,46 +25,46 @@
 
 ### Phase 1: Windows Environment Setup (1-10)
 
-1. **Install Docker Desktop for Windows**
+1. ✅ **Install Docker Desktop for Windows**
    - Download and install Docker Desktop
    - Enable WSL2 backend
    - Configure resource limits (memory, CPU)
    - Verify with `docker --version` and `docker compose version`
 
-2. **Install Python 3.11+ for Windows**
+2. ✅ **Install Python 3.11+ for Windows**
    - Download from python.org
    - Add to PATH during installation
    - Install pip
    - Verify with `python --version`
 
-3. **Install NI-DAQmx drivers**
+3. ✅ **Install NI-DAQmx drivers**
    - Download NI-DAQmx from ni.com
    - Install runtime and development support
    - Verify device detection in NI MAX (Measurement & Automation Explorer)
    - Test cDAQ-9187 connectivity
 
-4. **Install Pico SDK and drivers**
+4. ✅ **Install Pico SDK and drivers**
    - Download Pico SDK from picotech.com
    - Install USB drivers for TC-08
    - Install PicoLog or SDK libraries
    - Verify TC-08 detection in Device Manager
 
-5. **Install Git for Windows**
+5. ✅ **Install Git for Windows**
    - Download from git-scm.com
    - Configure user name and email
    - Clone or copy existing repository
 
-6. **Create Python virtual environment**
+6. ✅ **Create Python virtual environment**
    - `python -m venv venv`
    - Activate: `venv\Scripts\activate`
    - Install core dependencies: `pip install PySide6 pyyaml influxdb-client`
 
-7. **Install Python hardware libraries**
+7. ✅ **Install Python hardware libraries**
    - NI: `pip install nidaqmx`
    - Pico: `pip install picosdk` or `pip install usbtc08`
    - Modbus RTU: `pip install pymodbus pyserial`
 
-8. **Setup Windows Defender / Firewall exceptions**
+8. ✅ **Setup Windows Defender / Firewall exceptions**
    - Allow Docker ports (8086 InfluxDB, 3000 Grafana, 8888+ bridges)
    - Allow Python application network access
    - Configure localhost exemptions
