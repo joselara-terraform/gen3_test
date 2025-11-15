@@ -372,6 +372,10 @@ bridges:
   bga03:
     port: 8890
 
+# PSU Control (placeholder for when PSU is connected)
+psu_control:
+  mode: "gen3"  # Gen3 mode (single PSU via Modbus RTU)
+
 # Telegraf Settings
 telegraf:
   agent:

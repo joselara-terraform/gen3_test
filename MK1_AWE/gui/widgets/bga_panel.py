@@ -19,12 +19,14 @@ class BGAPanel(QWidget):
         
         # Check if Gen2 mode (purge valves needed)
         psu_config = get_psu_config()
-        self.is_gen2 = (psu_config['mode'] == 'gen2')
+        self.is_gen2 = (psu_config.get('mode') == 'gen2')
         
         # Load BGA gas configuration
         config = load_config()
-        self.bga01_gases = config['modules']['BGA01']['gases']
-        self.bga02_gases = config['modules']['BGA02']['gases']
+        bga_config = config['modules']['BGA_Config']
+        self.bga01_gases = bga_config['BGA01']['gases']
+        self.bga02_gases = bga_config['BGA02']['gases']
+        self.bga03_gases = bga_config.get('BGA03', {}).get('gases', self.bga01_gases)
         
         # Layout
         layout = QVBoxLayout(self)
