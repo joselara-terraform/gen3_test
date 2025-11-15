@@ -3,7 +3,7 @@
 import minimalmodbus, time, os
 
 # Connect
-psu = minimalmodbus.Instrument("/dev/tty.usbmodem57590316981", 1)
+psu = minimalmodbus.Instrument("COM11", 1)
 psu.serial.baudrate = 9600
 psu.mode = minimalmodbus.MODE_RTU
 psu.serial.timeout = 0.5  # Essential for reliability
@@ -34,7 +34,7 @@ scales = [0.1, 0.1, 0.1, 0.1, 1, 0.1, 1, 1, 1, 1, 0.1, 0.1, 1]
 while True:
     try:
         vals = psu.read_registers(0x0001, 13)
-        os.system('clear')
+        os.system('cls')
         print(f"PSU Monitor - {time.strftime('%H:%M:%S')}\n")
         
         for n, (v, s, l) in enumerate(zip(vals, scales, labels)):
