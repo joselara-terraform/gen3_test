@@ -124,19 +124,19 @@
     - Expose `/metrics` endpoint in InfluxDB line protocol
     - Handle open/failed thermocouples gracefully
 
-16. **Test PSU Modbus RTU connectivity**
+16. **⏸️ ON HOLD - Test PSU Modbus RTU connectivity**
     - Use existing test scripts to verify RS485/USB adapter
     - Identify COM port (e.g., COM3, COM4)
     - Test read/write operations (voltage, current, enable)
     - Document register map
 
-17. **Implement PSU Modbus RTU client**
+17. **⏸️ ON HOLD - Implement PSU Modbus RTU client**
     - Create `Gen3_AWE/gui/psu_rtu_client.py`
     - Functions: `set_voltage()`, `set_current()`, `enable_output()`, `disable_output()`
     - Read current PSU state: `get_voltage()`, `get_current()`, `get_power()`
     - Include safety limits and timeout handling
 
-18. **Implement PSU monitoring bridge (optional)**
+18. **⏸️ ON HOLD - Implement PSU monitoring bridge (optional)**
     - Create `Gen3_AWE/hdw/psu_http.py`
     - Poll PSU at 1Hz for V/I/P/status
     - Expose `/metrics` endpoint for Telegraf
@@ -144,11 +144,11 @@
 
 19. **Create unified health check utility**
     - Script to test all hardware connections
-    - NI cDAQ (analog + relay), Pico TC-08, PSU
+    - NI cDAQ (analog + relay), Pico TC-08, (PSU when available)
     - Report status, channel counts, firmware versions
     - Save diagnostic log
 
-20. **Update devices.yaml for Gen3 hardware**
+20. ✅ **Update devices.yaml for Gen3 hardware**
     - Remove MK1 devices (Waveshare modules, BGAs, 10 PSUs)
     - Add NI cDAQ configuration:
       - IP address, module slots, channel mappings
@@ -160,7 +160,7 @@
       - COM port, baud rate, slave ID, register map
     - Define system parameters (InfluxDB, Grafana)
 
-21. **Create Telegraf configuration for Gen3**
+21. ✅ **Create Telegraf configuration for Gen3**
     - Update `config/telegraf.conf`
     - HTTP input for NI analog bridge (port 8881)
     - HTTP input for Pico TC-08 bridge (port 8882)
