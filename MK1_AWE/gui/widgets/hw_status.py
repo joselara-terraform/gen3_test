@@ -40,10 +40,10 @@ class StatusWorker(QThread):
             results['AIM'] = False
             results['RLM'] = False
         
-        # Check Pico TC-08
+        # Check Pico TC-08 via HTTP bridge (can't open device directly if bridge is using it)
         try:
-            dll_path = config['devices']['Pico_TC08']['dll_path']
-            results['TCM'] = self._check_pico_tc08(dll_path)  # Thermocouple Module
+            tc08_port = config['bridges']['pico_tc08']['port']
+            results['TCM'] = self._check_http_bridge(tc08_port)  # Thermocouple Module
         except Exception:
             results['TCM'] = False
         
@@ -72,16 +72,13 @@ class StatusWorker(QThread):
         except Exception:
             return False
     
-    def _check_pico_tc08(self, dll_path):
-        """Check if Pico TC-08 is accessible"""
+    def _check_http_bridge(self, port):
+        """Check if HTTP bridge is responding"""
         try:
-            dll = ctypes.WinDLL(dll_path)
-            dll.usb_tc08_open_unit.restype = ctypes.c_int16
-            handle = dll.usb_tc08_open_unit()
-            if handle > 0:
-                dll.usb_tc08_close_unit.argtypes = [ctypes.c_int16]
-                dll.usb_tc08_close_unit(handle)
-                return True
+            response = requests.get(f"http://localhost:{port}/health", timeout=1)
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('device_online', False)
             return False
         except Exception:
             return False
