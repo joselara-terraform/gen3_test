@@ -55,7 +55,18 @@ class PSUPanel(QWidget):
         form_layout = QFormLayout()
         form_layout.setSpacing(12)
         
-        if self.mode == 'mk1':
+        if self.mode == 'gen3':
+            # Gen3: Voltage and Current for single PSU
+            self.voltage_input = QLineEdit()
+            self.voltage_input.setPlaceholderText("100 - 900")
+            self.voltage_input.setValidator(QDoubleValidator(0.0, 900.0, 1))
+            form_layout.addRow("Voltage (V):", self.voltage_input)
+            
+            self.current_input = QLineEdit()
+            self.current_input.setPlaceholderText("1 - 100")
+            self.current_input.setValidator(QDoubleValidator(0.0, 100.0, 1))
+            form_layout.addRow("Current (A):", self.current_input)
+        elif self.mode == 'mk1':
             # MK1: Voltage and Current
             self.voltage_input = QLineEdit()
             self.voltage_input.setPlaceholderText("100 - 300")
@@ -228,16 +239,8 @@ class PSUPanel(QWidget):
             self.profile_button.setObjectName("profile_button")
     
     def _apply_settings(self):
-        """Apply PSU settings with interlock check"""
-        # Interlock: Contactor must be closed
-        if not self.contactor_closed:
-            self._show_interlock_warning(
-                "Contactor Open",
-                "Cannot set power while contactor is open.\nClose contactor (RL01) first."
-            )
-            return
-        
-        # Get current value
+        """Apply PSU settings"""
+        # Get voltage and current values
         current_text = self.current_input.text()
         if not current_text:
             return
@@ -245,7 +248,29 @@ class PSUPanel(QWidget):
         try:
             amps = float(current_text)
             
-            if self.mode == 'mk1':
+            if self.mode == 'gen3':
+                # Gen3: Get voltage and current, use new PSU client
+                voltage_text = self.voltage_input.text() if self.voltage_input else ""
+                if not voltage_text:
+                    self._show_error("Missing Input", "Please enter voltage")
+                    return
+                
+                volts = float(voltage_text)
+                
+                # Import Gen3 PSU client
+                try:
+                    from ..psu_rtu_client import set_voltage_current
+                except ImportError:
+                    from psu_rtu_client import set_voltage_current
+                
+                # Set voltage and current (safety limits handled by client)
+                if set_voltage_current(volts, amps):
+                    print(f"Applied: {volts}V, {amps}A")
+                else:
+                    self._show_error("Error", "Failed to set PSU")
+                    return
+                
+            elif self.mode == 'mk1':
                 # MK1: Also get voltage
                 voltage_text = self.voltage_input.text() if self.voltage_input else "120"
                 volts = float(voltage_text) if voltage_text else 120.0
@@ -369,16 +394,23 @@ class PSUPanel(QWidget):
     
     def _update_button_states(self):
         """Update Enter/Stop/Ramp/Profile button states based on interlocks"""
-        # Enter: Requires contactor closed, not ramping, not profiling
-        self.enter_button.setEnabled(self.contactor_closed and not self.is_ramping and not self.is_profiling)
+        # Gen3: No contactor interlock
+        if self.mode == 'gen3':
+            interlock_ok = True
+        else:
+            # Gen2/MK1: Requires contactor closed
+            interlock_ok = self.contactor_closed
         
-        # Ramp: Requires contactor closed, not ramping, not profiling
+        # Enter: Requires interlock OK, not ramping, not profiling
+        self.enter_button.setEnabled(interlock_ok and not self.is_ramping and not self.is_profiling)
+        
+        # Ramp: Requires interlock OK, not ramping, not profiling
         if self.ramp_button:
-            self.ramp_button.setEnabled(self.contactor_closed and not self.is_ramping and not self.is_profiling)
+            self.ramp_button.setEnabled(interlock_ok and not self.is_ramping and not self.is_profiling)
         
-        # Profile: Requires contactor closed, not ramping, not profiling
+        # Profile: Requires interlock OK, not ramping, not profiling
         if self.profile_button:
-            self.profile_button.setEnabled(self.contactor_closed and not self.is_ramping and not self.is_profiling)
+            self.profile_button.setEnabled(interlock_ok and not self.is_ramping and not self.is_profiling)
         
         # Stop: Always enabled (to allow emergency stop)
         self.stop_button.setEnabled(True)
@@ -642,17 +674,26 @@ class PSUPanel(QWidget):
             return
         
         try:
-            # Send stop command to PSU
-            stop()
+            # Send stop command to PSU (mode-aware)
+            if self.mode == 'gen3':
+                try:
+                    from ..psu_rtu_client import safe_shutdown
+                except ImportError:
+                    from psu_rtu_client import safe_shutdown
+                safe_shutdown()
+            else:
+                stop()
             
             # Update tracking
             self.current_setpoint = 0.0
             self.current_changed.emit(0.0)
             self.current_input.clear()
+            if self.voltage_input:
+                self.voltage_input.clear()
             self.is_ramping = False  # Cancel any ongoing ramp
             self._update_button_states()
             
-            print("Stopped: 0A")
+            print("Stopped: 0V, 0A")
         except Exception as e:
             self._show_error("Error", f"Failed to stop PSU:\n{e}")
     

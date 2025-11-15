@@ -125,9 +125,10 @@ class MainWindow(QMainWindow):
         elif not bgas_online and 'BGA' in self.initialized_devices:
             self.initialized_devices.discard('BGA')
         
-        # PSU panel: On hold for now
+        # PSU panel: Enable when PSU online
         psu_online = status_results.get('PSU', False)
-        # self.psu_panel.set_hardware_available(psu_online)  # Uncomment when PSU implemented
+        psu_count = 1 if psu_online else 0
+        self.psu_panel.set_hardware_available(psu_count)
         
         # Store current status for next comparison
         self.previous_status = status_results.copy()

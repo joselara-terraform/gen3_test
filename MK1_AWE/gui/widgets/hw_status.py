@@ -58,8 +58,12 @@ class StatusWorker(QThread):
             results['BGA02'] = False
             results['BGA03'] = False
         
-        # PSU - on hold for now
-        results['PSU'] = False
+        # Check PSU via HTTP bridge
+        try:
+            psu_port = config['bridges']['psu']['port']
+            results['PSU'] = self._check_http_bridge(psu_port)
+        except Exception:
+            results['PSU'] = False
         
         self.status_updated.emit(results)
     

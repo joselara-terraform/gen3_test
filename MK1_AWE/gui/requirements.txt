@@ -10,6 +10,7 @@ nidaqmx
 # Modbus RTU/Serial (for PSU)
 pymodbus==3.6.7
 pyserial
+minimalmodbus
 
 # InfluxDB Client
 influxdb-client==1.43.0
