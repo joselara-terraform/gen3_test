@@ -124,21 +124,21 @@
     - Expose `/metrics` endpoint in InfluxDB line protocol
     - Handle open/failed thermocouples gracefully
 
-16. **⏸️ ON HOLD - Test PSU Modbus RTU connectivity**
+16. ✅ **Test PSU Modbus RTU connectivity**
     - Use existing test scripts to verify RS485/USB adapter
     - Identify COM port (e.g., COM3, COM4)
     - Test read/write operations (voltage, current, enable)
     - Document register map
 
-17. **⏸️ ON HOLD - Implement PSU Modbus RTU client**
+17. **Implement PSU Modbus RTU client**
     - Create `Gen3_AWE/gui/psu_rtu_client.py`
     - Functions: `set_voltage()`, `set_current()`, `enable_output()`, `disable_output()`
     - Read current PSU state: `get_voltage()`, `get_current()`, `get_power()`
     - Include safety limits and timeout handling
 
-18. **⏸️ ON HOLD - Implement PSU monitoring bridge (optional)**
+18. ✅ **Implement PSU monitoring bridge**
     - Create `Gen3_AWE/hdw/psu_http.py`
-    - Poll PSU at 1Hz for V/I/P/status
+    - Poll PSU at 10Hz for V/I/P/status
     - Expose `/metrics` endpoint for Telegraf
     - Enable real-time PSU monitoring in Grafana
 
