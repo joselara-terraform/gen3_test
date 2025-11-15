@@ -3,7 +3,9 @@
 
 import sys
 import logging
+from pathlib import Path
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
 from main_window import MainWindow
 
 # Suppress library noise - only show critical errors
@@ -13,6 +15,12 @@ logging.getLogger('nidaqmx').setLevel(logging.WARNING)
 
 def main():
     app = QApplication(sys.argv)
+    
+    # Set app icon
+    icon_path = Path(__file__).parent.parent.parent / "assets" / "favicon.ico"
+    if icon_path.exists():
+        app.setWindowIcon(QIcon(str(icon_path)))
+    
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
