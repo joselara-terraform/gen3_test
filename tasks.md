@@ -348,15 +348,15 @@
     - Kept HTTP server architecture and command queue
     - BGA03 bridge pending (COM port TBD)
 
-58. **Test BGA bridges individually**
+58. ✅ **Test BGA bridges individually**
     - Start each bridge manually
     - Verify `/metrics` returns BGA data (purity, gases, temp, pressure)
     - Check InfluxDB line protocol format
-    - Verify 10Hz sampling rate
+    - Verified ~2Hz sampling rate (0.5s polling)
 
 59. **Enable BGA inputs in Telegraf**
-    - Uncomment BGA01/02/03 HTTP inputs in telegraf.conf
-    - Use `host.docker.internal:8888/8889/8890`
+    - Uncomment BGA01/02 HTTP inputs in telegraf.conf
+    - Use `host.docker.internal:8888/8889`
     - Restart Telegraf container
     - Verify BGA data flowing to InfluxDB
 
