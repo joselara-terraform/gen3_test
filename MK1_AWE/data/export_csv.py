@@ -3,6 +3,7 @@
 
 from influxdb_client import InfluxDBClient
 from datetime import datetime
+from pathlib import Path
 import sys
 import os
 import warnings
@@ -11,6 +12,15 @@ from influxdb_client.client.warnings import MissingPivotFunction
 
 # Suppress influxdb_client warnings about pivot function
 warnings.simplefilter("ignore", MissingPivotFunction)
+
+# Load .env file if it exists
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent.parent.parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+except ImportError:
+    pass  # python-dotenv not installed, use environment variables
 
 # Import configuration from single source of truth
 from test_config import (

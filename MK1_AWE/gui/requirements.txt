@@ -27,3 +27,6 @@ Flask
 # Retry/Backoff Logic
 tenacity==9.0.0
 
+# Environment variable loading
+python-dotenv
+
