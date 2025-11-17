@@ -27,8 +27,8 @@ TEST_NAME = "Gen3_Test_1"
 
 # Time Range (Pacific Time - PT)
 # EDIT THESE for your test:
-START_TIME = datetime(2025, 11, 17, 10, 0, 0, tzinfo=ZoneInfo('America/Los_Angeles'))
-STOP_TIME = datetime(2025, 11, 17, 11, 0, 0, tzinfo=ZoneInfo('America/Los_Angeles'))
+START_TIME = datetime(2025, 11, 17, 12, 41, 30, tzinfo=ZoneInfo('America/Los_Angeles'))
+STOP_TIME = datetime(2025, 11, 17, 12, 45, 0, tzinfo=ZoneInfo('America/Los_Angeles'))
 
 # Auto-convert to UTC for InfluxDB queries
 START_TIME_UTC = START_TIME.astimezone(ZoneInfo('UTC')).isoformat().replace('+00:00', 'Z')
