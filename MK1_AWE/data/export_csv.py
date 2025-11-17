@@ -80,7 +80,7 @@ from(bucket: "{influx_params['bucket']}")
         df = client.query_api().query_data_frame(query)
         
         if df.empty:
-            print(f"  ⚠ No data found")
+            print(f"  [!] No data found")
             return None
         
         # Keep only timestamp and data columns
@@ -97,13 +97,13 @@ from(bucket: "{influx_params['bucket']}")
         output_path = os.path.join(output_dir, output_file)
         df.to_csv(output_path, index=False, float_format='%.6f')
         
-        print(f"  ✓ {len(df)} points, {len(keep_cols)-1} channels")
-        print(f"    File: {output_file} ({os.path.getsize(output_path) / 1024:.1f} KB)")
+        print(f"  [OK] {len(df)} points, {len(keep_cols)-1} channels")
+        print(f"       File: {output_file} ({os.path.getsize(output_path) / 1024:.1f} KB)")
         
         return df
         
     except Exception as e:
-        print(f"  ✗ Error: {e}")
+        print(f"  [ERROR] {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -136,7 +136,7 @@ from(bucket: "{influx_params['bucket']}")
             df = client.query_api().query_data_frame(query)
             
             if df.empty:
-                print(f"  ⚠ {bga_id}: No data found")
+                print(f"  [!] {bga_id}: No data found")
                 continue
             
             # Pivot manually using pandas (more reliable than Flux pivot with tags)
@@ -162,11 +162,11 @@ from(bucket: "{influx_params['bucket']}")
             output_path = os.path.join(output_dir, output_file)
             df_pivot.to_csv(output_path, index=False, float_format='%.6f')
             
-            print(f"  ✓ {bga_id}: {len(df_pivot)} points")
-            print(f"    File: {output_file} ({os.path.getsize(output_path) / 1024:.1f} KB)")
+            print(f"  [OK] {bga_id}: {len(df_pivot)} points")
+            print(f"       File: {output_file} ({os.path.getsize(output_path) / 1024:.1f} KB)")
             
     except Exception as e:
-        print(f"  ✗ Error: {e}")
+        print(f"  [ERROR] {e}")
 
 
 def export_data():
@@ -236,11 +236,11 @@ def export_data():
         export_bga_data(client, influx_params, output_dir, date_str, DOWNSAMPLE_BGA)
         
         print(f"\n{'=' * 60}")
-        print(f"✓ Export complete: {test_dir}")
+        print(f"[OK] Export complete: {test_dir}")
         print(f"{'=' * 60}")
         print(f"\nExported files:")
         print(f"  - {date_str}_AIX.csv (16 analog inputs, raw mA)")
-        print(f"  - {date_str}_TC.csv (8 thermocouples, °C)")
+        print(f"  - {date_str}_TC.csv (8 thermocouples, C)")
         print(f"  - {date_str}_RL.csv (16 relay states, 1/0)")
         print(f"  - {date_str}_PSU.csv (PSU data)")
         print(f"  - {date_str}_BGA_BGA01/02/03.csv (BGA data)")

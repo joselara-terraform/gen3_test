@@ -78,7 +78,7 @@ def plot_analog_inputs(test_dir, plots_dir, purge_periods, active_periods):
     csv_path = test_dir / 'csv' / f"{test_dir.name.split('_')[0]}_AIX.csv"
     
     if not csv_path.exists():
-        print("  ⚠ AIX.csv not found")
+        print("  [!] AIX.csv not found")
         return
     
     df = pd.read_csv(csv_path, parse_dates=['timestamp'])
@@ -97,7 +97,7 @@ def plot_analog_inputs(test_dir, plots_dir, purge_periods, active_periods):
             plotted_channels += 1
     
     if plotted_channels == 0:
-        print("  ⚠ No active AI channels (all < 1mA)")
+        print("  [!] No active AI channels (all < 1mA)")
         plt.close()
         return
     
@@ -120,7 +120,7 @@ def plot_analog_inputs(test_dir, plots_dir, purge_periods, active_periods):
     plt.savefig(output_path, dpi=PLOT_DPI, format=PLOT_FORMAT)
     plt.close()
     
-    print(f"  ✓ Analog Inputs → {output_path.name} ({plotted_channels} channels)")
+    print(f"  [OK] Analog Inputs -> {output_path.name} ({plotted_channels} channels)")
 
 
 def plot_temperatures(test_dir, plots_dir, purge_periods, active_periods):
@@ -164,7 +164,7 @@ def plot_temperatures(test_dir, plots_dir, purge_periods, active_periods):
                 plotted_channels += 1
     
     if plotted_channels == 0:
-        print("  ⚠ No temperature data")
+        print("  [!] No temperature data")
         plt.close()
         return
     
@@ -188,7 +188,7 @@ def plot_temperatures(test_dir, plots_dir, purge_periods, active_periods):
     plt.savefig(output_path, dpi=PLOT_DPI, format=PLOT_FORMAT)
     plt.close()
     
-    print(f"  ✓ Temperatures → {output_path.name} ({plotted_channels} channels)")
+    print(f"  [OK] Temperatures -> {output_path.name} ({plotted_channels} channels)")
 
 
 def plot_gas_purity(test_dir, plots_dir, purge_periods, active_periods, ylim=(0, 100), suffix=""):
@@ -218,7 +218,7 @@ def plot_gas_purity(test_dir, plots_dir, purge_periods, active_periods, ylim=(0,
                 plotted += 1
     
     if plotted == 0:
-        print("  ⚠ No BGA data")
+        print("  [!] No BGA data")
         plt.close()
         return
     
@@ -249,7 +249,7 @@ def plot_gas_purity(test_dir, plots_dir, purge_periods, active_periods, ylim=(0,
     plt.savefig(output_path, dpi=PLOT_DPI, format=PLOT_FORMAT)
     plt.close()
     
-    print(f"  ✓ Gas Purity{' (Detail)' if suffix else ''} → {output_path.name} ({plotted} BGAs)")
+    print(f"  [OK] Gas Purity{' (Detail)' if suffix else ''} -> {output_path.name} ({plotted} BGAs)")
 
 
 def plot_cell_voltages(test_dir, plots_dir, purge_periods, active_periods):
@@ -311,7 +311,7 @@ def plot_pressures(test_dir, plots_dir, purge_periods, active_periods):
     csv_path = test_dir / 'csv' / f"{test_dir.name.split('_')[0]}_AIX.csv"
     
     if not csv_path.exists():
-        print("  ⚠ AIX.csv not found")
+        print("  [!] AIX.csv not found")
         return
     
     df = pd.read_csv(csv_path, parse_dates=['timestamp'])
@@ -354,7 +354,7 @@ def plot_current(test_dir, plots_dir, purge_periods, active_periods):
     labjack_path = test_dir / 'csv' / f"{test_dir.name.split('_')[0]}_labjack.csv"
     
     if not csv_path.exists():
-        print("  ⚠ AIX.csv not found")
+        print("  [!] AIX.csv not found")
         return
     
     df = pd.read_csv(csv_path, parse_dates=['timestamp'])
@@ -406,7 +406,7 @@ def plot_flowrates(test_dir, plots_dir, purge_periods, active_periods):
     csv_path = test_dir / 'csv' / f"{test_dir.name.split('_')[0]}_AIX.csv"
     
     if not csv_path.exists():
-        print("  ⚠ AIX.csv not found")
+        print("  [!] AIX.csv not found")
         return
     
     df = pd.read_csv(csv_path, parse_dates=['timestamp'])
@@ -448,7 +448,7 @@ def plot_psu_data(test_dir, plots_dir):
     csv_path = test_dir / 'csv' / f"{test_dir.name.split('_')[0]}_PSU.csv"
     
     if not csv_path.exists():
-        print("  ⚠ PSU.csv not found")
+        print("  [!] PSU.csv not found")
         return
     
     df = pd.read_csv(csv_path, parse_dates=['timestamp'])
@@ -492,7 +492,7 @@ def plot_psu_data(test_dir, plots_dir):
     plt.savefig(output_path, dpi=PLOT_DPI, format=PLOT_FORMAT)
     plt.close()
     
-    print(f"  ✓ PSU → {output_path.name}")
+    print(f"  [OK] PSU -> {output_path.name}")
 
 
 def generate_plots():
@@ -531,7 +531,7 @@ def generate_plots():
     
     print()
     print("=" * 60)
-    print(f"✓ Plots saved to: {plots_dir}")
+    print(f"[OK] Plots saved to: {plots_dir}")
     print("=" * 60)
 
 
