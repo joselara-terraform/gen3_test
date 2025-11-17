@@ -428,37 +428,37 @@
     - Updated purge/active period shading (BGA N2, PSU current > 1A)
     - Removed MK1-specific plots (cell voltages, converted sensors)
 
-49. **Test standalone export/plot workflow**
+49. ✅ **Test standalone export/plot workflow**
     - Edit test_config.py with real test times
     - Run `python export_csv.py` - verify CSVs created
     - Run `python plot_data.py` - verify plots generated
     - Run `python process_test.py` - verify full pipeline
     - Check output quality and completeness
 
-50. **Create GUI export dialog widget**
+50. ✅ **Create GUI export dialog widget**
     - New file: `MK1_AWE/gui/widgets/export_dialog.py`
     - Popup with 3 text inputs:
       - Test Name (string)
       - Start Time (YYYY-MM-DD_HH_MM_SS in PT)
       - End Time (YYYY-MM-DD_HH_MM_SS in PT)
     - Validation:
-      - Date format check (regex or datetime.strptime)
+      - Date format check (datetime.strptime)
       - Start < End check
       - Show error popups for invalid inputs
-    - "Export" button triggers export_csv.py with parameters
-    - "Cancel" button closes dialog
+    - Updates test_config.py with new values
+    - Signals parent to run export
 
-51. **Add Save button to GUI**
-    - Add "SAVE" button to main_window.py (next to PSU panel or separate)
+51. ✅ **Add Save button to GUI**
+    - Add "SAVE DATA" button to main_window.py (centered row between status and relays)
     - Button opens export dialog
     - Button enabled always (independent of hardware)
-    - Styled to match GUI theme (blue or purple)
+    - Styled purple to stand out
 
-52. **Integrate export execution in GUI**
-    - Export dialog calls export_csv.py as subprocess
-    - Show progress indicator during export
-    - Show success/error message when complete
-    - Option: Auto-open output folder after export
+52. ✅ **Integrate export execution in GUI**
+    - Export dialog updates test_config.py, then signals main window
+    - Main window runs process_test.py as subprocess
+    - Status bar shows progress/completion
+    - Success/error popups with results
 
 53. **Test GUI export workflow**
     - Launch GUI

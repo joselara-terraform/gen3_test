@@ -1,14 +1,16 @@
 """Main window for MK1_AWE Control GUI"""
 
+import sys
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-    QLabel, QFrame, QStatusBar, QDialog, QPushButton
+    QLabel, QFrame, QStatusBar, QDialog, QPushButton, QMessageBox
 )
 from PySide6.QtCore import Qt, QTimer
 from widgets.hw_status import HardwareStatusWidget
 from widgets.relay_panel import RelayPanel
 from widgets.bga_panel import BGAPanel
 from widgets.psu_panel import PSUPanel
+from widgets.export_dialog import ExportDialog
 
 
 class MainWindow(QMainWindow):
@@ -73,6 +75,32 @@ class MainWindow(QMainWindow):
         top_layout.addWidget(self.psu_panel, 1)  # Expand to fill
         
         main_layout.addLayout(top_layout)
+        
+        # Save button (centered)
+        save_button_layout = QHBoxLayout()
+        save_button_layout.addStretch()
+        
+        self.save_button = QPushButton("SAVE DATA")
+        self.save_button.setMinimumHeight(60)
+        self.save_button.setMinimumWidth(200)
+        self.save_button.clicked.connect(self._on_save_clicked)
+        self.save_button.setStyleSheet("""
+            QPushButton {
+                background-color: #9C27B0;
+                color: #ffffff;
+                border: none;
+                border-radius: 8px;
+                font-size: 18px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #7B1FA2;
+            }
+        """)
+        save_button_layout.addWidget(self.save_button)
+        save_button_layout.addStretch()
+        
+        main_layout.addLayout(save_button_layout)
         
         # Bottom: Relay panel
         self.relay_panel = RelayPanel()
@@ -251,6 +279,98 @@ class MainWindow(QMainWindow):
         
         print("Safe shutdown complete")
         event.accept()
+    
+    def _on_save_clicked(self):
+        """Open export dialog"""
+        dialog = ExportDialog(self)
+        dialog.export_requested.connect(self._run_export)
+        dialog.exec()
+    
+    def _run_export(self):
+        """Execute data export as subprocess"""
+        import subprocess
+        from pathlib import Path
+        
+        self.status_bar.showMessage("Exporting data...")
+        
+        try:
+            # Run process_test.py script
+            script_path = Path(__file__).parent.parent / "data" / "process_test.py"
+            python_exe = Path(sys.executable)
+            
+            # Run in subprocess
+            result = subprocess.run(
+                [str(python_exe), str(script_path)],
+                capture_output=True,
+                text=True,
+                cwd=script_path.parent
+            )
+            
+            if result.returncode == 0:
+                self.status_bar.showMessage("Export complete!", 5000)
+                self._show_info("Export Complete", 
+                              "Data exported and plots generated successfully!\n\n"
+                              "Check MK1_AWE/data/ folder for output.")
+            else:
+                self.status_bar.showMessage("Export failed", 5000)
+                self._show_error("Export Failed", 
+                               f"Error during export:\n{result.stderr[:500]}")
+        
+        except Exception as e:
+            self.status_bar.showMessage("Export error", 5000)
+            self._show_error("Export Error", f"Failed to run export:\n{e}")
+    
+    def _show_info(self, title, message):
+        """Show styled info dialog"""
+        msg = QMessageBox(self)
+        msg.setWindowTitle(title)
+        msg.setText(message)
+        msg.setIcon(QMessageBox.Information)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: #2b2b2b;
+            }
+            QLabel {
+                color: #e0e0e0;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #555555;
+                color: #e0e0e0;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        """)
+        msg.exec()
+    
+    def _show_error(self, title, message):
+        """Show styled error dialog"""
+        msg = QMessageBox(self)
+        msg.setWindowTitle(title)
+        msg.setText(message)
+        msg.setIcon(QMessageBox.Warning)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setStyleSheet("""
+            QMessageBox {
+                background-color: #2b2b2b;
+            }
+            QLabel {
+                color: #e0e0e0;
+                font-size: 14px;
+            }
+            QPushButton {
+                background-color: #555555;
+                color: #e0e0e0;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        """)
+        msg.exec()
     
     def _create_placeholder_frame(self, label_text):
         """Create a styled placeholder frame with label"""
