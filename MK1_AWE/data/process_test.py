@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Complete test data processing pipeline.
+Gen3 AWE Complete Test Data Processing Pipeline
 
-Edit test_config.py to configure, then run: python3 process_test.py
+Edit test_config.py to configure, then run: python process_test.py
 """
 
 import subprocess
@@ -15,8 +15,8 @@ from datetime import datetime
 # All configuration now in test_config.py - edit that file!
 from test_config import (
     TEST_NAME, START_TIME, STOP_TIME, START_TIME_UTC, STOP_TIME_UTC,
-    DOWNSAMPLE_AIX, DOWNSAMPLE_TC, DOWNSAMPLE_BGA, DOWNSAMPLE_RL, DOWNSAMPLE_CV,
-    DOWNSAMPLE_FUNCTION, SENSOR_CONVERSIONS, PLOT_DPI, PLOT_FORMAT, FIGURE_SIZE
+    DOWNSAMPLE_AIX, DOWNSAMPLE_TC, DOWNSAMPLE_PSU, DOWNSAMPLE_BGA, DOWNSAMPLE_RL,
+    DOWNSAMPLE_FUNCTION, PLOT_DPI, PLOT_FORMAT, FIGURE_SIZE
 )
 
 
@@ -69,12 +69,11 @@ def save_test_config(output_dir):
         'downsampling': {
             'AIX': DOWNSAMPLE_AIX,
             'TC': DOWNSAMPLE_TC,
+            'PSU': DOWNSAMPLE_PSU,
             'BGA': DOWNSAMPLE_BGA,
             'RL': DOWNSAMPLE_RL,
-            'CV': DOWNSAMPLE_CV,
             'function': DOWNSAMPLE_FUNCTION
         },
-        'sensor_conversions': SENSOR_CONVERSIONS,
         'plot_settings': {
             'dpi': PLOT_DPI,
             'format': PLOT_FORMAT,
@@ -100,7 +99,7 @@ def main():
     """Main processing pipeline"""
     print()
     print("=" * 70)
-    print("MK1_AWE TEST DATA PROCESSING")
+    print("GEN3 AWE TEST DATA PROCESSING")
     print("=" * 70)
     print(f"Test: {TEST_NAME}")
     print(f"Time: {START_TIME.strftime('%Y-%m-%d %H:%M')} to {STOP_TIME.strftime('%H:%M %Z')}")

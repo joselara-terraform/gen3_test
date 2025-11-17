@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Export InfluxDB data to CSV. Configuration in test_config.py"""
+"""Export Gen3 AWE InfluxDB data to CSV. Configuration in test_config.py"""
 
 from influxdb_client import InfluxDBClient
 from datetime import datetime
 import sys
 import os
 import warnings
+import traceback
 from influxdb_client.client.warnings import MissingPivotFunction
 
 # Suppress influxdb_client warnings about pivot function
@@ -14,8 +15,8 @@ warnings.simplefilter("ignore", MissingPivotFunction)
 # Import configuration from single source of truth
 from test_config import (
     TEST_NAME, START_TIME, STOP_TIME, START_TIME_UTC, STOP_TIME_UTC,
-    DOWNSAMPLE_AIX, DOWNSAMPLE_TC, DOWNSAMPLE_BGA, DOWNSAMPLE_RL, DOWNSAMPLE_CV,
-    DOWNSAMPLE_FUNCTION, SENSOR_CONVERSIONS
+    DOWNSAMPLE_AIX, DOWNSAMPLE_TC, DOWNSAMPLE_PSU, DOWNSAMPLE_BGA, DOWNSAMPLE_RL,
+    DOWNSAMPLE_FUNCTION
 )
 import pandas as pd
 
@@ -24,28 +25,42 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'gui'))
 from config_loader import get_influx_params
 
 
-def convert_mA_to_eng(mA_value, config):
-    """Convert 4-20mA to engineering units"""
-    min_mA = config['min_mA']
-    max_mA = config['max_mA']
-    min_eng = config['min_eng']
-    max_eng = config['max_eng']
-    return min_eng + (mA_value - min_mA) * (max_eng - min_eng) / (max_mA - min_mA)
+# Removed convert_mA_to_eng - not needed for raw data export
 
 
 def export_sensor_group(client, influx_params, output_dir, date_str, 
-                        measurement, fields, downsample_window, filename_suffix):
-    """Export a group of related sensors to a single CSV"""
+                        measurement, channels, downsample_window, filename_suffix, 
+                        field_name=None, use_channel_tag=False):
+    """Export a group of related sensors to a single CSV
     
-    # Build query for multiple fields
-    field_filter = ' or '.join([f'r._field == "{f}"' for f in fields])
+    Args:
+        measurement: InfluxDB measurement name
+        channels: List of channel names
+        field_name: Field to extract (if using channel tags), e.g., 'raw_ma', 'temp_c'
+        use_channel_tag: If True, filter by channel tag instead of field name
+    """
     
-    query = f'''
+    if use_channel_tag and field_name:
+        # For measurements like ni_analog, tc08 that use channel tags
+        channel_filter = ' or '.join([f'r.channel == "{ch}"' for ch in channels])
+        query = f'''
+from(bucket: "{influx_params['bucket']}")
+  |> range(start: {START_TIME_UTC}, stop: {STOP_TIME_UTC})
+  |> filter(fn: (r) => r._measurement == "{measurement}")
+  |> filter(fn: (r) => r._field == "{field_name}")
+  |> filter(fn: (r) => {channel_filter})
+  |> aggregateWindow(every: {downsample_window}, fn: {DOWNSAMPLE_FUNCTION}, createEmpty: false)
+  |> pivot(rowKey:["_time"], columnKey: ["channel"], valueColumn: "_value")
+'''
+    else:
+        # For measurements like ni_relays, psu that use field names directly
+        field_filter = ' or '.join([f'r._field == "{f}"' for f in channels])
+        query = f'''
 from(bucket: "{influx_params['bucket']}")
   |> range(start: {START_TIME_UTC}, stop: {STOP_TIME_UTC})
   |> filter(fn: (r) => r._measurement == "{measurement}")
   |> filter(fn: (r) => {field_filter})
-  |> aggregateWindow(every: {downsample_window}, fn: {DOWNSAMPLE_FUNCTION})
+  |> aggregateWindow(every: {downsample_window}, fn: {DOWNSAMPLE_FUNCTION}, createEmpty: false)
   |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
 '''
     
@@ -58,13 +73,13 @@ from(bucket: "{influx_params['bucket']}")
             print(f"  ⚠ No data found")
             return None
         
-        # Keep only timestamp and field columns
-        keep_cols = ['_time'] + [col for col in df.columns if col in fields]
+        # Keep only timestamp and data columns
+        keep_cols = ['_time'] + [col for col in df.columns if col in channels]
         df = df[keep_cols]
         
         # Convert timestamps from UTC to local timezone and format as string
         df['_time'] = df['_time'].dt.tz_convert('America/Los_Angeles')
-        df['_time'] = df['_time'].dt.strftime('%Y-%m-%d %H:%M:%S.%f').str[:-3]  # Remove last 3 digits (keep milliseconds)
+        df['_time'] = df['_time'].dt.strftime('%Y-%m-%d %H:%M:%S.%f').str[:-3]
         df.rename(columns={'_time': 'timestamp'}, inplace=True)
         
         # Save to CSV with proper float formatting
@@ -75,37 +90,16 @@ from(bucket: "{influx_params['bucket']}")
         print(f"  ✓ {len(df)} points, {len(keep_cols)-1} channels")
         print(f"    File: {output_file} ({os.path.getsize(output_path) / 1024:.1f} KB)")
         
-        return df  # Return for conversion
+        return df
         
     except Exception as e:
         print(f"  ✗ Error: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
-def export_converted_sensors(df_aix, output_dir, date_str, sensor_type, unit_name):
-    """Export converted engineering units for specific sensor type"""
-    if df_aix is None or df_aix.empty:
-        return
-    
-    converted_df = pd.DataFrame({'timestamp': df_aix['timestamp']})
-    
-    # Convert matching sensors
-    for channel_id, config in SENSOR_CONVERSIONS.items():
-        if config['unit'] == unit_name and channel_id in df_aix.columns:
-            converted_df[config['label']] = df_aix[channel_id].apply(
-                lambda x: convert_mA_to_eng(x, config)
-            )
-    
-    if len(converted_df.columns) <= 1:  # Only timestamp, no data
-        return
-    
-    # Save converted CSV
-    output_file = f"{date_str}_{sensor_type}.csv"
-    output_path = os.path.join(output_dir, output_file)
-    converted_df.to_csv(output_path, index=False, float_format='%.6f')
-    
-    print(f"  ✓ Converted {sensor_type}: {len(converted_df.columns)-1} channels")
-    print(f"    File: {output_file} ({os.path.getsize(output_path) / 1024:.1f} KB)")
+# Removed export_converted_sensors - Gen3 exports raw data only
 
 
 def export_bga_data(client, influx_params, output_dir, date_str, downsample_window):
@@ -115,7 +109,7 @@ def export_bga_data(client, influx_params, output_dir, date_str, downsample_wind
     
     try:
         # Export each BGA separately to avoid duplicate rows
-        for bga_id in ['BGA01', 'BGA02']:
+        for bga_id in ['BGA01', 'BGA02', 'BGA03']:
             query = f'''
 from(bucket: "{influx_params['bucket']}")
   |> range(start: {START_TIME_UTC}, stop: {STOP_TIME_UTC})
@@ -166,9 +160,9 @@ from(bucket: "{influx_params['bucket']}")
 
 
 def export_data():
-    """Export all sensor data with configured parameters"""
+    """Export all Gen3 sensor data with configured parameters"""
     
-    # Use local time for folder naming (consistent with process_test.py)
+    # Use local time for folder naming
     date_str = START_TIME.strftime('%Y-%m-%d')
     
     # Create output directory: YYYY-MM-DD_TEST_NAME/csv/
@@ -177,21 +171,21 @@ def export_data():
     os.makedirs(output_dir, exist_ok=True)
     
     print(f"=" * 60)
-    print(f"MK1_AWE Data Export")
+    print(f"Gen3 AWE Data Export")
     print(f"=" * 60)
     print(f"Test: {TEST_NAME}")
     print(f"Time range: {START_TIME.strftime('%Y-%m-%d %H:%M:%S %Z')} to {STOP_TIME.strftime('%H:%M:%S %Z')}")
-    print(f"Output directory: {os.path.basename(output_dir)}/")
+    print(f"Output directory: {os.path.basename(test_dir)}/csv/")
     
     # Get InfluxDB credentials
     influx_params = get_influx_params()
     
-    # For token, check environment or docker-compose.yml
+    # For token, check environment
     token = os.getenv('INFLUXDB_ADMIN_TOKEN')
     if not token:
         print("\nError: INFLUXDB_ADMIN_TOKEN environment variable not set")
-        print("Get it from docker-compose.yml or set it:")
-        print("  export INFLUXDB_ADMIN_TOKEN=your_token_here")
+        print("Set it in PowerShell:")
+        print('  $env:INFLUXDB_ADMIN_TOKEN="your_token_here"')
         sys.exit(1)
     
     # Connect to InfluxDB
@@ -202,46 +196,48 @@ def export_data():
     )
     
     try:
-        # Export analog inputs (AI01-AI08) - raw mA values
-        ai_fields = [f"AI0{i}" for i in range(1, 9)]
-        df_aix = export_sensor_group(client, influx_params, output_dir, date_str,
-                                     "analog_inputs", ai_fields, DOWNSAMPLE_AIX, "AIX")
-        
-        # Export converted engineering units
-        if df_aix is not None:
-            print("\nExporting converted sensors...")
-            export_converted_sensors(df_aix, output_dir, date_str, "pressures", "PSI")
-            export_converted_sensors(df_aix, output_dir, date_str, "current", "A")
-            export_converted_sensors(df_aix, output_dir, date_str, "flowrates", "L/min")
-        
-        # Export thermocouples (TC01-TC16)
-        tc_fields = [f"TC{i:02d}" for i in range(1, 17)]
+        # Export analog inputs (AI01-AI16) - raw mA values from ni_analog measurement
+        ai_channels = [f"AI{i:02d}" for i in range(1, 17)]
         export_sensor_group(client, influx_params, output_dir, date_str,
-                          "modbus", tc_fields, DOWNSAMPLE_TC, "TC")
+                          "ni_analog", ai_channels, DOWNSAMPLE_AIX, "AIX",
+                          field_name="raw_ma", use_channel_tag=True)
         
-        # Export relays (RL01-RL30)
-        rl_fields = [f"RL{i:02d}" for i in range(1, 31)]
+        # Export thermocouples (TC01-TC08) from tc08 measurement
+        tc_channels = [f"TC{i:02d}" for i in range(1, 9)]
         export_sensor_group(client, influx_params, output_dir, date_str,
-                          "modbus", rl_fields, DOWNSAMPLE_RL, "RL")
+                          "tc08", tc_channels, DOWNSAMPLE_TC, "TC",
+                          field_name="temp_c", use_channel_tag=True)
         
-        # Export cell voltages (CV001 only)
-        cv_fields = ["CV001"]
+        # Export relays (RL01-RL16) from ni_relays measurement
+        rl_fields = [f"RL{i:02d}" for i in range(1, 17)]
         export_sensor_group(client, influx_params, output_dir, date_str,
-                          "cell_voltages", cv_fields, DOWNSAMPLE_CV, "CV")
+                          "ni_relays", rl_fields, DOWNSAMPLE_RL, "RL",
+                          use_channel_tag=False)
         
-        # Export LabJack PSU control voltage
+        # Export PSU data (all fields in single CSV)
+        psu_fields = ["voltage", "current", "power", "capacity", "runtime", 
+                      "battery_v", "temperature", "status", "sys_fault", "mod_fault",
+                      "set_voltage_rb", "set_current_rb", "output_enable"]
         export_sensor_group(client, influx_params, output_dir, date_str,
-                          "labjack", ["AIN0_voltage"], DOWNSAMPLE_CV, "labjack")
+                          "psu", psu_fields, DOWNSAMPLE_PSU, "PSU",
+                          use_channel_tag=False)
         
         # Export BGA data (separate per device)
         export_bga_data(client, influx_params, output_dir, date_str, DOWNSAMPLE_BGA)
         
         print(f"\n{'=' * 60}")
-        print(f"✓ Export complete: {output_dir}")
+        print(f"✓ Export complete: {test_dir}")
         print(f"{'=' * 60}")
+        print(f"\nExported files:")
+        print(f"  - {date_str}_AIX.csv (16 analog inputs, raw mA)")
+        print(f"  - {date_str}_TC.csv (8 thermocouples, °C)")
+        print(f"  - {date_str}_RL.csv (16 relay states, 1/0)")
+        print(f"  - {date_str}_PSU.csv (PSU data)")
+        print(f"  - {date_str}_BGA_BGA01/02/03.csv (BGA data)")
         
     except Exception as e:
         print(f"\nError: {e}")
+        traceback.print_exc()
         sys.exit(1)
     finally:
         client.close()

@@ -8,15 +8,16 @@
 **✅ Phase 2 Complete:** Hardware Interfaces (Tasks 11-25, except 19)
 **✅ Phase 3 Complete:** Control GUI Implementation (Tasks 26-40)
 **✅ Phase 4 Complete:** Grafana Dashboards (Tasks 41-45)
-**🔜 Next:** BGA Integration (Tasks 56-65)
+**🔄 Phase 3B In Progress:** BGA Integration (Tasks 56-65) - 56-58 complete
+**🔜 Next:** Data Export/Analysis (Phase 5: Tasks 46-55)
 
 **System Status:**
-- ✅ All hardware bridges running as Windows services (NI analog, Pico TC-08, PSU)
+- ✅ All hardware bridges running as Windows services (NI analog, Pico TC-08, PSU, BGA01/02)
 - ✅ Docker stack operational (InfluxDB, Telegraf, Grafana)
-- ✅ Data flowing: 16 analog inputs (10Hz) + 8 thermocouples (1Hz) + PSU (10Hz)
-- ✅ GUI functional: Relay control (16 relays) + PSU control (V/I/Ramp/Profile)
-- ✅ Grafana dashboards: Analog inputs, Thermocouples, PSU voltage/current
-- ⏸️ BGAs: Hardware ready, bridges pending (Tasks 56-65)
+- ✅ Data flowing: 16 analog inputs (10Hz) + 8 thermocouples (1Hz) + PSU (10Hz) + 16 relay states (10Hz) + 2 BGAs (2Hz)
+- ✅ GUI functional: Relay control (16 relays) + PSU control (V/I/Ramp/Profile) + BGA purge
+- ✅ Grafana dashboards: Analog inputs, Thermocouples, PSU, BGAs, Relay states
+- 🔄 BGA03: Bridge created, service setup pending (Task 60)
 
 ---
 
@@ -399,75 +400,120 @@
 
 ---
 
-### Phase 5: Data Export and Analysis (46-50)
+### Phase 5: Data Export and Analysis (46-55)
 
-46. **Adapt CSV export script for Gen3**
-    - Update `Gen3_AWE/data/export_csv.py`
-    - Support new measurements: `ni_analog`, `tc08`, `psu`
-    - Keep downsampling and time range functionality
-    - Add Gen3 field mappings
+46. ✅ **Update test_config.py for Gen3**
+    - Change measurement names: `analog_inputs` → `ni_analog`, `modbus` → `tc08`/`ni_relays`
+    - Update field names: AI01-AI16 (16 channels), TC01-TC08 (8 channels), RL01-RL16
+    - Add PSU measurement configuration
+    - Add BGA01/02/03 support
+    - Keep sensor conversion structure
 
-47. **Adapt plotting script for Gen3**
-    - Update `Gen3_AWE/data/plot_data.py`
-    - Generate plots:
-      - 8x Analog inputs (pressures, flowrates, etc.)
-      - 8x Thermocouples
-      - PSU (V, I, P on one plot)
-      - Relay states (timeline/heatmap)
-    - Add current profile overlay (commanded vs actual)
+47. ✅ **Update export_csv.py for Gen3**
+    - Update measurement queries:
+      - `ni_analog` for analog inputs (AI01-AI16, raw_ma field)
+      - `tc08` for thermocouples (TC01-TC08, temp_c field)
+      - `ni_relays` for relay states (RL01-RL16, integer 1/0)
+      - `psu` for PSU data (voltage, current, power, etc.)
+      - `bga_metrics` for BGAs (purity, uncertainty, temp, pressure)
+    - Export each measurement to separate CSV
+    - Keep downsampling and time range from test_config.py
+    - Handle Gen3 field structure (tagged vs fields)
 
-48. **Implement test configuration logging**
-    - On profile start, save snapshot:
-      - `test_config.json` with timestamp, profile name, settings
-      - Copy of `devices.yaml` for test reproducibility
-    - Store in `data/test_YYYY-MM-DD_HHMMSS/`
+48. ✅ **Update plot_data.py for Gen3**
+    - Plot analog inputs (AI01-AI16, raw mA)
+    - Plot thermocouples (TC01-TC08) + BGA temps
+    - Plot PSU (voltage, current, power on 3 subplots with actual vs set)
+    - Plot BGA purity (all 3 BGAs)
+    - Updated purge/active period shading (BGA N2, PSU current > 1A)
+    - Removed MK1-specific plots (cell voltages, converted sensors)
 
-49. **Create post-processing pipeline**
-    - Script: `Gen3_AWE/data/process_test.py`
-    - Input: Test time range or test directory
-    - Output: CSV exports + PNG plots + summary statistics
-    - Include pass/fail criteria (if applicable)
+49. **Test standalone export/plot workflow**
+    - Edit test_config.py with real test times
+    - Run `python export_csv.py` - verify CSVs created
+    - Run `python plot_data.py` - verify plots generated
+    - Run `python process_test.py` - verify full pipeline
+    - Check output quality and completeness
 
-50. **Test full data workflow**
-    - Run test profile (e.g., 5 min solar profile)
-    - Export data from InfluxDB
-    - Generate plots
-    - Verify data quality and completeness
+50. **Create GUI export dialog widget**
+    - New file: `MK1_AWE/gui/widgets/export_dialog.py`
+    - Popup with 3 text inputs:
+      - Test Name (string)
+      - Start Time (YYYY-MM-DD_HH_MM_SS in PT)
+      - End Time (YYYY-MM-DD_HH_MM_SS in PT)
+    - Validation:
+      - Date format check (regex or datetime.strptime)
+      - Start < End check
+      - Show error popups for invalid inputs
+    - "Export" button triggers export_csv.py with parameters
+    - "Cancel" button closes dialog
+
+51. **Add Save button to GUI**
+    - Add "SAVE" button to main_window.py (next to PSU panel or separate)
+    - Button opens export dialog
+    - Button enabled always (independent of hardware)
+    - Styled to match GUI theme (blue or purple)
+
+52. **Integrate export execution in GUI**
+    - Export dialog calls export_csv.py as subprocess
+    - Show progress indicator during export
+    - Show success/error message when complete
+    - Option: Auto-open output folder after export
+
+53. **Test GUI export workflow**
+    - Launch GUI
+    - Click SAVE button
+    - Enter test parameters
+    - Verify CSV files created
+    - Verify plots generated (if auto-plot enabled)
+    - Check error handling (invalid dates, wrong format)
+
+54. **Add export menu/options**
+    - Optional: Add "Export plots automatically" checkbox
+    - Optional: Add "Open folder after export" checkbox
+    - Optional: Add recent test list (quick re-export)
+    - Optional: Add default time range (last hour, last 30 min)
+
+55. **Document export workflow**
+    - Update README with export instructions
+    - Document standalone vs GUI export
+    - Document file structure (CSVs, plots, config)
+    - Document test_config.py configuration options
 
 ---
 
-### Phase 6: Documentation and Finalization (51-55)
+### Phase 6: Documentation and Finalization (66-70)
 
-51. **Update README.md for Gen3**
-    - ✅ System overview (Gen3 hardware)
-    - ✅ Architecture diagram
-    - ✅ Quick start guide (Windows-specific)
-    - ✅ Hardware table (NI, Pico, PSU)
-    - ✅ Software stack (Docker on Windows)
-    - ✅ Control GUI usage
-    - ✅ Troubleshooting section (Windows-specific issues)
+66. ✅ **Update README.md for Gen3**
+    - System overview (Gen3 hardware)
+    - Architecture diagram
+    - Quick start guide (Windows-specific)
+    - Hardware table (NI, Pico, PSU, BGAs)
+    - Software stack (Docker on Windows)
+    - Control GUI usage
+    - Troubleshooting section (Windows-specific issues)
 
-52. **Update architecture.md for Gen3**
-    - ✅ High-level system diagram
-    - ✅ Component responsibilities (bridges, Telegraf, GUI)
-    - ✅ Data flow (hardware → HTTP → Telegraf → InfluxDB → Grafana)
-    - ✅ Configuration management (devices.yaml)
-    - ✅ Safety and state management
-    - ✅ Windows-specific considerations
+67. ✅ **Update architecture.md for Gen3**
+    - High-level system diagram
+    - Component responsibilities (bridges, Telegraf, GUI)
+    - Data flow (hardware → HTTP → Telegraf → InfluxDB → Grafana)
+    - Configuration management (devices.yaml)
+    - Safety and state management
+    - Windows-specific considerations
 
-53. **Create Windows setup guide**
-    - Document: `Gen3_AWE/docs/windows_setup.md`
+68. **Create Windows setup guide**
+    - Document: `MK1_AWE/docs/windows_setup.md`
     - Step-by-step: Docker, Python, NI drivers, Pico drivers
     - Screenshots for key steps
     - Troubleshooting common Windows issues
 
-54. **Create hardware validation guide**
-    - Document: `Gen3_AWE/docs/hardware_validation.md`
+69. **Create hardware validation guide**
+    - Document: `MK1_AWE/docs/hardware_validation.md`
     - Test procedures for each device
     - Expected outputs and pass/fail criteria
     - Diagnostic commands
 
-55. **Final system integration test**
+70. **Final system integration test**
     - Full startup sequence: Docker → Bridges → GUI
     - Run 30-minute test with all hardware
     - Monitor for errors, crashes, data gaps

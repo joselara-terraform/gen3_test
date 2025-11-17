@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Generate plots from CSV data. Configuration in test_config.py"""
+"""Generate plots from Gen3 CSV data. Configuration in test_config.py"""
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from pathlib import Path
 import os
+import numpy as np
 
 # Import configuration from single source of truth
-from test_config import PLOT_DPI, PLOT_FORMAT, FIGURE_SIZE, SENSOR_CONVERSIONS
+from test_config import PLOT_DPI, PLOT_FORMAT, FIGURE_SIZE
 
 # Which test directory to plot (auto-detects latest)
 TEST_DIR = None
@@ -23,15 +24,7 @@ def find_latest_test_dir():
     return max(test_dirs, key=lambda d: d.stat().st_mtime)
 
 
-def convert_mA_to_eng(mA_value, config):
-    """Convert 4-20mA signal to engineering units"""
-    min_mA = config['min_mA']
-    max_mA = config['max_mA']
-    min_eng = config['min_eng']
-    max_eng = config['max_eng']
-    
-    # Linear interpolation
-    return min_eng + (mA_value - min_mA) * (max_eng - min_eng) / (max_mA - min_mA)
+# Removed convert_mA_to_eng - plotting raw data only for Gen3
 
 
 def get_shading_periods(test_dir):
@@ -39,7 +32,7 @@ def get_shading_periods(test_dir):
     date_str = test_dir.name.split('_')[0]
     csv_dir = test_dir / 'csv'
     bga_path = csv_dir / f"{date_str}_BGA_BGA01.csv"
-    aix_path = csv_dir / f"{date_str}_AIX.csv"
+    psu_path = csv_dir / f"{date_str}_PSU.csv"
     
     purge_periods = []
     active_periods = []
@@ -55,16 +48,14 @@ def get_shading_periods(test_dir):
                 if not group_df.empty:
                     purge_periods.append((group_df['timestamp'].min(), group_df['timestamp'].max()))
     
-    # Get active periods (current > 1A)
-    if aix_path.exists() and 'AI03' in SENSOR_CONVERSIONS:
-        df_aix = pd.read_csv(aix_path, parse_dates=['timestamp'])
-        if 'AI03' in df_aix.columns:
-            config = SENSOR_CONVERSIONS['AI03']
-            current = df_aix['AI03'].apply(lambda x: convert_mA_to_eng(x, config))
-            df_aix['is_active'] = current > 1.0
-            active_changes = df_aix['is_active'].ne(df_aix['is_active'].shift())
+    # Get active periods (PSU current > 1A)
+    if psu_path.exists():
+        df_psu = pd.read_csv(psu_path, parse_dates=['timestamp'])
+        if 'current' in df_psu.columns:
+            df_psu['is_active'] = df_psu['current'] > 1.0
+            active_changes = df_psu['is_active'].ne(df_psu['is_active'].shift())
             active_groups = active_changes.cumsum()
-            for group_id, group_df in df_aix[df_aix['is_active']].groupby(active_groups):
+            for group_id, group_df in df_psu[df_psu['is_active']].groupby(active_groups):
                 if not group_df.empty:
                     active_periods.append((group_df['timestamp'].min(), group_df['timestamp'].max()))
     
@@ -83,7 +74,7 @@ def add_shading(ax, purge_periods, active_periods):
 
 
 def plot_analog_inputs(test_dir, plots_dir, purge_periods, active_periods):
-    """Plot analog input channels with activity > 1mA"""
+    """Plot analog input channels (AI01-AI16) with activity > 1mA"""
     csv_path = test_dir / 'csv' / f"{test_dir.name.split('_')[0]}_AIX.csv"
     
     if not csv_path.exists():
@@ -99,8 +90,8 @@ def plot_analog_inputs(test_dir, plots_dir, purge_periods, active_periods):
     
     # Plot each AI channel if it has activity > 1mA
     plotted_channels = 0
-    for i in range(1, 9):
-        col = f'AI0{i}'
+    for i in range(1, 17):
+        col = f'AI{i:02d}'
         if col in df.columns and df[col].max() > 1.0:
             ax.plot(df['timestamp'], df[col], label=col, linewidth=0.8)
             plotted_channels += 1
@@ -112,11 +103,11 @@ def plot_analog_inputs(test_dir, plots_dir, purge_periods, active_periods):
     
     ax.set_xlabel('Time')
     ax.set_ylabel('Current [mA]')
-    ax.set_title('Analog Inputs')
+    ax.set_title('Analog Inputs (Raw)')
     ax.set_ylim(0, 25)
     ax.set_xlim(df['timestamp'].min(), df['timestamp'].max())
     ax.grid(True, alpha=0.3)
-    ax.legend(loc='best', ncol=2, fontsize=8)
+    ax.legend(loc='best', ncol=4, fontsize=7)
     
     # Format x-axis
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
@@ -133,11 +124,10 @@ def plot_analog_inputs(test_dir, plots_dir, purge_periods, active_periods):
 
 
 def plot_temperatures(test_dir, plots_dir, purge_periods, active_periods):
-    """Plot thermocouples and BGA temperatures (exclude disconnected TCs)"""
+    """Plot thermocouples (TC01-TC08) and BGA temperatures"""
     csv_dir = test_dir / 'csv'
     tc_path = csv_dir / f"{test_dir.name.split('_')[0]}_TC.csv"
-    bga1_path = csv_dir / f"{test_dir.name.split('_')[0]}_BGA_BGA01.csv"
-    bga2_path = csv_dir / f"{test_dir.name.split('_')[0]}_BGA_BGA02.csv"
+    bga_paths = [csv_dir / f"{test_dir.name.split('_')[0]}_BGA_BGA{i:02d}.csv" for i in [1,2,3]]
     
     fig, ax = plt.subplots(figsize=FIGURE_SIZE)
     
@@ -147,35 +137,31 @@ def plot_temperatures(test_dir, plots_dir, purge_periods, active_periods):
     plotted_channels = 0
     time_range = None
     
-    # Plot thermocouples (exclude if all values > 1000C, indicating disconnected sensor)
+    # Plot thermocouples (TC01-TC08, exclude if out of range -200 to +1500°C)
     if tc_path.exists():
         df_tc = pd.read_csv(tc_path, parse_dates=['timestamp'])
         time_range = (df_tc['timestamp'].min(), df_tc['timestamp'].max())
         
-        for i in range(1, 17):
+        for i in range(1, 9):
             col = f'TC{i:02d}'
-            if col in df_tc.columns and df_tc[col].min() < 1000:
-                ax.plot(df_tc['timestamp'], df_tc[col], label=col, linewidth=0.6, alpha=0.7)
-                plotted_channels += 1
+            if col in df_tc.columns:
+                # Filter out invalid temps
+                valid_temps = (df_tc[col] > -200) & (df_tc[col] < 1500)
+                if valid_temps.any():
+                    ax.plot(df_tc['timestamp'], df_tc[col], label=col, linewidth=0.8, alpha=0.7)
+                    plotted_channels += 1
     
     # Plot BGA temperatures
-    if bga1_path.exists():
-        df_bga1 = pd.read_csv(bga1_path, parse_dates=['timestamp'])
-        if time_range is None:
-            time_range = (df_bga1['timestamp'].min(), df_bga1['timestamp'].max())
-        if 'temperature' in df_bga1.columns:
-            ax.plot(df_bga1['timestamp'], df_bga1['temperature'], 
-                    label='BGA01 Temp', linewidth=1.5, color='red', linestyle='--')
-            plotted_channels += 1
-    
-    if bga2_path.exists():
-        df_bga2 = pd.read_csv(bga2_path, parse_dates=['timestamp'])
-        if time_range is None:
-            time_range = (df_bga2['timestamp'].min(), df_bga2['timestamp'].max())
-        if 'temperature' in df_bga2.columns:
-            ax.plot(df_bga2['timestamp'], df_bga2['temperature'], 
-                    label='BGA02 Temp', linewidth=1.5, color='orange', linestyle='--')
-            plotted_channels += 1
+    for idx, bga_path in enumerate(bga_paths, start=1):
+        if bga_path.exists():
+            df_bga = pd.read_csv(bga_path, parse_dates=['timestamp'])
+            if time_range is None:
+                time_range = (df_bga['timestamp'].min(), df_bga['timestamp'].max())
+            if 'temperature' in df_bga.columns:
+                colors = ['red', 'orange', 'purple']
+                ax.plot(df_bga['timestamp'], df_bga['temperature'], 
+                        label=f'BGA{idx:02d}', linewidth=1.5, color=colors[idx-1], linestyle='--')
+                plotted_channels += 1
     
     if plotted_channels == 0:
         print("  ⚠ No temperature data")
@@ -185,11 +171,11 @@ def plot_temperatures(test_dir, plots_dir, purge_periods, active_periods):
     ax.set_xlabel('Time')
     ax.set_ylabel('Temperature [°C]')
     ax.set_title('Temperatures')
-    ax.set_ylim(0, 120)
+    ax.set_ylim(0, 100)
     if time_range:
         ax.set_xlim(time_range[0], time_range[1])
     ax.grid(True, alpha=0.3)
-    ax.legend(loc='best', ncol=3, fontsize=7)
+    ax.legend(loc='best', ncol=3, fontsize=8)
     
     # Format x-axis
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
@@ -206,10 +192,9 @@ def plot_temperatures(test_dir, plots_dir, purge_periods, active_periods):
 
 
 def plot_gas_purity(test_dir, plots_dir, purge_periods, active_periods, ylim=(0, 100), suffix=""):
-    """Plot BGA purity with period shading"""
+    """Plot BGA purity for all 3 BGAs with period shading"""
     csv_dir = test_dir / 'csv'
-    bga1_path = csv_dir / f"{test_dir.name.split('_')[0]}_BGA_BGA01.csv"
-    bga2_path = csv_dir / f"{test_dir.name.split('_')[0]}_BGA_BGA02.csv"
+    bga_paths = [csv_dir / f"{test_dir.name.split('_')[0]}_BGA_BGA{i:02d}.csv" for i in [1,2,3]]
     
     fig, ax = plt.subplots(figsize=FIGURE_SIZE)
     
@@ -217,29 +202,31 @@ def plot_gas_purity(test_dir, plots_dir, purge_periods, active_periods, ylim=(0,
     add_shading(ax, purge_periods, active_periods)
     
     time_range = None
+    plotted = 0
     
-    # Plot BGA01 purity
-    if bga1_path.exists():
-        df_bga1 = pd.read_csv(bga1_path, parse_dates=['timestamp'])
-        time_range = (df_bga1['timestamp'].min(), df_bga1['timestamp'].max())
-        if 'purity' in df_bga1.columns:
-            ax.plot(df_bga1['timestamp'], df_bga1['purity'], 
-                    label='BGA01', linewidth=1.5, marker='.', markersize=2)
+    # Plot all BGAs
+    colors = ['blue', 'green', 'purple']
+    for idx, bga_path in enumerate(bga_paths, start=1):
+        if bga_path.exists():
+            df_bga = pd.read_csv(bga_path, parse_dates=['timestamp'])
+            if time_range is None:
+                time_range = (df_bga['timestamp'].min(), df_bga['timestamp'].max())
+            if 'purity' in df_bga.columns:
+                ax.plot(df_bga['timestamp'], df_bga['purity'], 
+                        label=f'BGA{idx:02d}', linewidth=1.5, marker='.', 
+                        markersize=2, color=colors[idx-1])
+                plotted += 1
     
-    # Plot BGA02 purity
-    if bga2_path.exists():
-        df_bga2 = pd.read_csv(bga2_path, parse_dates=['timestamp'])
-        if time_range is None:
-            time_range = (df_bga2['timestamp'].min(), df_bga2['timestamp'].max())
-        if 'purity' in df_bga2.columns:
-            ax.plot(df_bga2['timestamp'], df_bga2['purity'], 
-                    label='BGA02', linewidth=1.5, marker='.', markersize=2)
+    if plotted == 0:
+        print("  ⚠ No BGA data")
+        plt.close()
+        return
     
     ax.set_xlabel('Time')
     ax.set_ylabel('Purity [%]')
     
     # Title based on range
-    if ylim == (80, 100):
+    if ylim == (90, 100):
         ax.set_title('Gas Purity (Detail)')
     else:
         ax.set_title('Gas Purity')
@@ -262,7 +249,7 @@ def plot_gas_purity(test_dir, plots_dir, purge_periods, active_periods, ylim=(0,
     plt.savefig(output_path, dpi=PLOT_DPI, format=PLOT_FORMAT)
     plt.close()
     
-    print(f"  ✓ Gas Purity{' (Detail)' if suffix else ''} → {output_path.name}")
+    print(f"  ✓ Gas Purity{' (Detail)' if suffix else ''} → {output_path.name} ({plotted} BGAs)")
 
 
 def plot_cell_voltages(test_dir, plots_dir, purge_periods, active_periods):
@@ -456,6 +443,58 @@ def plot_flowrates(test_dir, plots_dir, purge_periods, active_periods):
     print(f"  ✓ Flowrates → {output_path.name}")
 
 
+def plot_psu_data(test_dir, plots_dir):
+    """Plot PSU voltage, current, and power"""
+    csv_path = test_dir / 'csv' / f"{test_dir.name.split('_')[0]}_PSU.csv"
+    
+    if not csv_path.exists():
+        print("  ⚠ PSU.csv not found")
+        return
+    
+    df = pd.read_csv(csv_path, parse_dates=['timestamp'])
+    
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(FIGURE_SIZE[0], FIGURE_SIZE[1]*1.5), sharex=True)
+    
+    # Voltage plot (actual vs set)
+    if 'voltage' in df.columns and 'set_voltage_rb' in df.columns:
+        ax1.plot(df['timestamp'], df['voltage'], label='Actual', linewidth=1.5, color='blue')
+        ax1.plot(df['timestamp'], df['set_voltage_rb'], label='Set', linewidth=1.5, color='orange', linestyle='--')
+        ax1.set_ylabel('Voltage [V]')
+        ax1.set_title('PSU Voltage')
+        ax1.grid(True, alpha=0.3)
+        ax1.legend(loc='best')
+    
+    # Current plot (actual vs set)
+    if 'current' in df.columns and 'set_current_rb' in df.columns:
+        ax2.plot(df['timestamp'], df['current'], label='Actual', linewidth=1.5, color='blue')
+        ax2.plot(df['timestamp'], df['set_current_rb'], label='Set', linewidth=1.5, color='orange', linestyle='--')
+        ax2.set_ylabel('Current [A]')
+        ax2.set_title('PSU Current')
+        ax2.grid(True, alpha=0.3)
+        ax2.legend(loc='best')
+    
+    # Power plot
+    if 'power' in df.columns:
+        ax3.plot(df['timestamp'], df['power'], linewidth=1.5, color='green')
+        ax3.set_ylabel('Power [W]')
+        ax3.set_title('PSU Power')
+        ax3.set_xlabel('Time')
+        ax3.grid(True, alpha=0.3)
+    
+    # Format x-axis
+    ax3.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+    ax3.xaxis.set_major_locator(mdates.AutoDateLocator())
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    # Save
+    output_path = plots_dir / f"psu.{PLOT_FORMAT}"
+    plt.savefig(output_path, dpi=PLOT_DPI, format=PLOT_FORMAT)
+    plt.close()
+    
+    print(f"  ✓ PSU → {output_path.name}")
+
+
 def generate_plots():
     """Generate all plots from CSV data"""
     
@@ -474,24 +513,21 @@ def generate_plots():
     plots_dir.mkdir(exist_ok=True)
     
     print("=" * 60)
-    print(f"MK1_AWE Data Plotting")
+    print(f"Gen3 AWE Data Plotting")
     print("=" * 60)
     print(f"Test directory: {test_dir.name}")
     print(f"Output: {plots_dir.relative_to(Path(__file__).parent)}/")
     print()
     
-    # Get shading periods once for all plots
+    # Get shading periods (purge/active) for context
     purge_periods, active_periods = get_shading_periods(test_dir)
     
-    # Generate plots
+    # Generate Gen3 plots
     plot_analog_inputs(test_dir, plots_dir, purge_periods, active_periods)
     plot_temperatures(test_dir, plots_dir, purge_periods, active_periods)
-    plot_cell_voltages(test_dir, plots_dir, purge_periods, active_periods)
-    plot_pressures(test_dir, plots_dir, purge_periods, active_periods)
-    plot_current(test_dir, plots_dir, purge_periods, active_periods)
-    plot_flowrates(test_dir, plots_dir, purge_periods, active_periods)
+    plot_psu_data(test_dir, plots_dir)
     plot_gas_purity(test_dir, plots_dir, purge_periods, active_periods, ylim=(0, 100))
-    plot_gas_purity(test_dir, plots_dir, purge_periods, active_periods, ylim=(80, 100), suffix="_detail")
+    plot_gas_purity(test_dir, plots_dir, purge_periods, active_periods, ylim=(90, 100), suffix="_detail")
     
     print()
     print("=" * 60)
