@@ -207,35 +207,35 @@ modules:
     slot_2:
       RL01:
         channel: 0
-        name: "RL01"
+        name: "KOH Storage"
         type: "relay"
       RL02:
         channel: 1
-        name: "RL02"
+        name: "DI Storage"
         type: "relay"
       RL03:
         channel: 2
-        name: "RL03"
+        name: "Stack Drain"
         type: "relay"
       RL04:
         channel: 3
-        name: "RL04"
+        name: "H2 Purge"
         type: "relay"
       RL05:
         channel: 4
-        name: "RL05"
+        name: "DI Pump"
         type: "relay"
       RL06:
         channel: 5
-        name: "RL06"
+        name: "O2 Purge"
         type: "relay"
       RL07:
         channel: 6
-        name: "RL07"
+        name: "KOH Pump"
         type: "relay"
       RL08:
         channel: 7
-        name: "RL08"
+        name: "Deoxo"
         type: "relay"
     
     # Slot 3: NI-9485 (RL09-RL16)
