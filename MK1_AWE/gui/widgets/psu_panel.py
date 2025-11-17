@@ -33,6 +33,8 @@ class PSUPanel(QWidget):
         self.profile_data = None
         self.profile_index = 0
         self.profile_timer = None
+        self.profile_voltage = None
+        self.ramp_voltage = None
         self.operation_start_time = None
         self.operation_total_duration = None
         
@@ -417,8 +419,8 @@ class PSUPanel(QWidget):
     
     def _start_ramp(self):
         """Start discrete step ramp from 0A to max current (non-blocking)"""
-        # Interlock check
-        if not self.contactor_closed:
+        # Interlock check (gen2/mk1 only)
+        if self.mode != 'gen3' and not self.contactor_closed:
             self._show_interlock_warning(
                 "Contactor Open",
                 "Cannot ramp while contactor is open.\nClose contactor (RL01) first."
@@ -447,6 +449,23 @@ class PSUPanel(QWidget):
                 self._show_error("Ramp Setup Error", f"Failed to prepare PSUs:\n{e}")
                 return
         
+        # Gen3: Get voltage and current from input fields
+        if self.mode == 'gen3':
+            voltage_text = self.voltage_input.text() if self.voltage_input else ""
+            current_text = self.current_input.text()
+            
+            if not voltage_text or not current_text:
+                self._show_error("Missing Input", "Please enter both voltage and current for ramping")
+                return
+            
+            try:
+                self.ramp_voltage = float(voltage_text)
+            except ValueError:
+                self._show_error("Invalid Input", "Invalid voltage value")
+                return
+        else:
+            self.ramp_voltage = None
+        
         # Setup operation tracking
         self.operation_start_time = time.time()
         self.operation_total_duration = total_duration
@@ -474,8 +493,12 @@ class PSUPanel(QWidget):
             # Calculate target current for this step
             target_current = (self.ramp_current_step / self.ramp_max_steps) * self.ramp_max_current
             
-            # Set current
-            set_current(target_current)
+            # Set current (with voltage for gen3)
+            if self.mode == 'gen3' and self.ramp_voltage is not None:
+                set_current(target_current, voltage=self.ramp_voltage)
+            else:
+                set_current(target_current)
+            
             self.current_setpoint = target_current
             self.current_changed.emit(target_current)
             
@@ -526,7 +549,10 @@ class PSUPanel(QWidget):
             except Exception as e:
                 print(f"Warning: Failed to disable PSU outputs: {e}")
         
+        # Gen3: Keep output enabled (manual stop required)
+        
         self.is_ramping = False
+        self.ramp_voltage = None
         self.progress_update_timer.stop()
         self.progress_bar.setValue(0)
         self.progress_label.setText("")
@@ -534,8 +560,8 @@ class PSUPanel(QWidget):
     
     def _start_profile(self):
         """Execute current profile from CSV (non-blocking)"""
-        # Interlock check
-        if not self.contactor_closed:
+        # Interlock check (gen2/mk1 only)
+        if self.mode != 'gen3' and not self.contactor_closed:
             self._show_interlock_warning(
                 "Contactor Open",
                 "Cannot run profile while contactor is open.\nClose contactor (RL01) first."
@@ -554,6 +580,20 @@ class PSUPanel(QWidget):
         except Exception as e:
             self._show_error("Profile Error", f"Failed to load profile:\n{e}")
             return
+        
+        # Gen3: Get voltage from input field
+        if self.mode == 'gen3':
+            voltage_text = self.voltage_input.text() if self.voltage_input else ""
+            if not voltage_text:
+                self._show_error("Missing Input", "Please enter voltage for profile execution")
+                return
+            try:
+                self.profile_voltage = float(voltage_text)
+            except ValueError:
+                self._show_error("Invalid Input", "Invalid voltage value")
+                return
+        else:
+            self.profile_voltage = None
         
         # MK1: Set voltage to max and enable outputs before profile
         if self.mode == 'mk1':
@@ -596,8 +636,12 @@ class PSUPanel(QWidget):
             # Get current point
             target_time, target_current = self.profile_data[self.profile_index]
             
-            # Set current
-            set_current(target_current)
+            # Set current (with voltage for gen3)
+            if self.mode == 'gen3' and self.profile_voltage is not None:
+                set_current(target_current, voltage=self.profile_voltage)
+            else:
+                set_current(target_current)
+            
             self.current_setpoint = target_current
             self.current_changed.emit(target_current)
             
@@ -653,9 +697,12 @@ class PSUPanel(QWidget):
             except Exception as e:
                 print(f"Warning: Failed to disable PSU outputs: {e}")
         
+        # Gen3: Keep output enabled (manual stop required)
+        
         self.is_profiling = False
         self.profile_data = None
         self.profile_index = 0
+        self.profile_voltage = None
         self.progress_update_timer.stop()
         self.progress_bar.setValue(0)
         self.progress_label.setText("")

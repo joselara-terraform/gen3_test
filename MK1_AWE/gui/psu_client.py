@@ -17,7 +17,7 @@ def set_current(amps, voltage=None):
     
     Args:
         amps: Current in amperes
-        voltage: Voltage in volts (MK1 only, optional)
+        voltage: Voltage in volts (Gen3/MK1 only, optional)
         
     Raises:
         ValueError: If current out of range
@@ -26,7 +26,19 @@ def set_current(amps, voltage=None):
     psu_config = get_psu_config()
     mode = psu_config['mode']
     
-    if mode == 'gen2':
+    if mode == 'gen3':
+        # Gen3: Use HTTP-based PSU client
+        try:
+            from .psu_rtu_client import set_voltage_current
+        except ImportError:
+            from psu_rtu_client import set_voltage_current
+        
+        # Default voltage if not provided
+        if voltage is None:
+            voltage = 300.0  # Default voltage for gen3
+        
+        set_voltage_current(voltage, amps)
+    elif mode == 'gen2':
         _set_current_gen2(amps)
     elif mode == 'mk1':
         _set_current_mk1(amps, voltage)
@@ -43,7 +55,14 @@ def stop():
     psu_config = get_psu_config()
     mode = psu_config['mode']
     
-    if mode == 'gen2':
+    if mode == 'gen3':
+        # Gen3: Use safe_shutdown
+        try:
+            from .psu_rtu_client import safe_shutdown
+        except ImportError:
+            from psu_rtu_client import safe_shutdown
+        safe_shutdown()
+    elif mode == 'gen2':
         set_current(0.0)
     elif mode == 'mk1':
         # MK1: Disable outputs, then set 0V/0A

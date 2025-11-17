@@ -207,35 +207,35 @@ modules:
     slot_2:
       RL01:
         channel: 0
-        name: "KOH Storage"
+        name: "RL01"
         type: "relay"
       RL02:
         channel: 1
-        name: "DI Storage"
+        name: "RL02"
         type: "relay"
       RL03:
         channel: 2
-        name: "Stack Drain"
+        name: "RL03"
         type: "relay"
       RL04:
         channel: 3
-        name: "H2 Purge"
+        name: "RL04"
         type: "relay"
       RL05:
         channel: 4
-        name: "DI Pump"
+        name: "RL05"
         type: "relay"
       RL06:
         channel: 5
-        name: "O2 Purge"
+        name: "RL06"
         type: "relay"
       RL07:
         channel: 6
-        name: "KOH Pump"
+        name: "RL07"
         type: "relay"
       RL08:
         channel: 7
-        name: "Deoxo"
+        name: "RL08"
         type: "relay"
     
     # Slot 3: NI-9485 (RL09-RL16)
@@ -372,9 +372,21 @@ bridges:
   bga03:
     port: 8890
 
-# PSU Control (placeholder for when PSU is connected)
+# PSU Control
 psu_control:
   mode: "gen3"  # Gen3 mode (single PSU via Modbus RTU)
+  
+  # Gen3: Single PSU via Modbus RTU
+  gen3:
+    voltage_min: 100.0       # Minimum voltage
+    voltage_max: 900.0       # Maximum voltage
+    current_min: 1.0         # Minimum current
+    current_max: 100.0       # Maximum current
+    safe_voltage: 0.0        # Safe state voltage
+    safe_current: 0.0        # Safe state current
+    ramp_steps: 20           # Number of discrete ramp steps
+    ramp_step_duration: 6    # Duration of each step in seconds
+    profile_path: "MK1_AWE/profiles/solar_profile_1.csv"  # Current profile CSV path
 
 # Telegraf Settings
 telegraf:
