@@ -428,9 +428,22 @@ class PSUPanel(QWidget):
             return
         
         # Get parameters
-        max_current = get_max_current()
         num_steps, step_duration = get_ramp_config()
         total_duration = num_steps * step_duration
+        
+        # Get target current from input field
+        current_text = self.current_input.text()
+        if not current_text:
+            self._show_error("Missing Input", "Please enter target current for ramping")
+            return
+        
+        try:
+            target_current = float(current_text)
+        except ValueError:
+            self._show_error("Invalid Input", "Invalid current value")
+            return
+        
+        max_current = target_current
         
         # MK1: Set voltage to max and enable outputs before ramping
         if self.mode == 'mk1':
