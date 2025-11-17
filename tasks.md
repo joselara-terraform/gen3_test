@@ -336,18 +336,17 @@
 
 ### Phase 3B: BGA Integration (56-65)
 
-56. **Test BGA RS422/USB connectivity**
+56. ✅ **Test BGA RS422/USB connectivity**
     - Connect 3 BGAs via RS422/USB adapters
-    - Identify COM ports for BGA01, BGA02, BGA03
-    - Use Device Manager or test scripts to verify
-    - Update devices.yaml with COM ports
+    - Identify COM ports: BGA01=COM8, BGA02=COM3 (BGA03 pending)
+    - Test scripts verified (ws_rs422_bga.py)
+    - Updated devices.yaml with COM ports
 
-57. **Adapt BGA HTTP bridge for RS422/USB**
-    - Copy/adapt MK1 BGA244_http scripts for serial communication
-    - Create `MK1_AWE/hdw/bga244_usb_1.py` (BGA01, COM port from config)
-    - Create `MK1_AWE/hdw/bga244_usb_2.py` (BGA02, COM port from config)
-    - Create `MK1_AWE/hdw/bga244_usb_3.py` (BGA03, COM port from config)
-    - Or single script with port parameter
+57. ✅ **Adapt BGA HTTP bridges for RS422/USB**
+    - Modified `BGA244_http_1.py` for COM8, 9600 baud (BGA01)
+    - Modified `BGA244_http_2.py` for COM3, 9600 baud (BGA02)
+    - Kept HTTP server architecture and command queue
+    - BGA03 bridge pending (COM port TBD)
 
 58. **Test BGA bridges individually**
     - Start each bridge manually

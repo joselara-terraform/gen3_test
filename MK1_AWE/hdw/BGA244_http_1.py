@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""HTTP server for BGA01 (192.168.10.19) metrics on port 8888"""
-import socket
+"""HTTP server for BGA01 (COM8) metrics on port 8888"""
+import serial
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 import threading
 
 # BGA Configuration
-HOST = "192.168.10.19"
-PORT = 4196
+COM_PORT = "COM8"
+BAUD_RATE = 9600
 GASES = {"7782-44-7": "O2", "1333-74-0": "H2", "7727-37-9": "N2"}
 OVERLOAD = 9.9E37
 
@@ -28,14 +28,14 @@ data_lock = threading.Lock()
 command_queue = []
 command_lock = threading.Lock()
 
-def cmd(sock, text, read=True):
+def cmd(ser, text, read=True):
     """Send command to BGA and optionally read response"""
-    sock.sendall((text + "\r").encode())
+    ser.write((text + "\r").encode())
     time.sleep(0.05)
     if not read:
         return None
     try:
-        data = sock.recv(1024).decode().strip()
+        data = ser.read(ser.in_waiting or 1024).decode().strip()
         return data.split('\n')[-1] if data else None
     except:
         return None
@@ -61,25 +61,23 @@ def poll_bga():
     while True:
         try:
             # Connect to BGA
-            sock = socket.socket()
-            sock.connect((HOST, PORT))
-            sock.settimeout(0.2)
+            ser = serial.Serial(COM_PORT, BAUD_RATE, timeout=0.2)
             
             while True:
                 # Process any pending commands first
                 with command_lock:
                     if command_queue:
                         command = command_queue.pop(0)
-                        cmd(sock, command, read=False)
+                        cmd(ser, command, read=False)
                 
                 # Read all parameters
-                pg = cmd(sock, "GASP?")
-                sg = cmd(sock, "GASS?")
+                pg = cmd(ser, "GASP?")
+                sg = cmd(ser, "GASS?")
                 
-                pur = get_num(cmd(sock, "RATO? 1%"))
-                unc = get_num(cmd(sock, "UNCT?%"))
-                tc = get_num(cmd(sock, "TCEL? C"))
-                ps = get_num(cmd(sock, "PRES?"))
+                pur = get_num(cmd(ser, "RATO? 1%"))
+                unc = get_num(cmd(ser, "UNCT?%"))
+                tc = get_num(cmd(ser, "TCEL? C"))
+                ps = get_num(cmd(ser, "PRES?"))
                 
                 # Update global data
                 with data_lock:
@@ -179,7 +177,7 @@ def main():
     # Start HTTP server
     server = HTTPServer(('localhost', 8888), MetricsHandler)
     print(f"BGA01 HTTP server started on port 8888")
-    print(f"Polling BGA at {HOST}:{PORT}")
+    print(f"Polling BGA on {COM_PORT} at {BAUD_RATE} baud")
     
     try:
         server.serve_forever()
