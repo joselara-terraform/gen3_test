@@ -2,9 +2,10 @@
 
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-    QLineEdit, QPushButton, QFormLayout, QMessageBox
+    QLineEdit, QPushButton, QFormLayout, QMessageBox,
+    QDateEdit, QTimeEdit
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QDate, QTime
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -43,26 +44,39 @@ class ExportDialog(QDialog):
         self.test_name_input.setText("Gen3_Test_1")
         form_layout.addRow("Test Name:", self.test_name_input)
         
-        # Start time input
-        self.start_time_input = QLineEdit()
-        self.start_time_input.setPlaceholderText("YYYY-MM-DD_HH_MM_SS")
-        # Default to current time minus 1 hour
+        # Start date/time inputs
         default_start = datetime.now(ZoneInfo('America/Los_Angeles')) - timedelta(hours=1)
-        self.start_time_input.setText(default_start.strftime('%Y-%m-%d_%H_%M_%S'))
-        form_layout.addRow("Start Time (PT):", self.start_time_input)
         
-        # End time input
-        self.end_time_input = QLineEdit()
-        self.end_time_input.setPlaceholderText("YYYY-MM-DD_HH_MM_SS")
-        # Default to current time
+        start_layout = QHBoxLayout()
+        self.start_date = QDateEdit()
+        self.start_date.setCalendarPopup(True)
+        self.start_date.setDate(QDate(default_start.year, default_start.month, default_start.day))
+        self.start_date.setDisplayFormat("yyyy-MM-dd")
+        start_layout.addWidget(self.start_date)
+        
+        self.start_time = QTimeEdit()
+        self.start_time.setTime(QTime(default_start.hour, default_start.minute, default_start.second))
+        self.start_time.setDisplayFormat("HH:mm:ss")
+        start_layout.addWidget(self.start_time)
+        
+        form_layout.addRow("Start (PT):", start_layout)
+        
+        # End date/time inputs
         default_end = datetime.now(ZoneInfo('America/Los_Angeles'))
-        self.end_time_input.setText(default_end.strftime('%Y-%m-%d_%H_%M_%S'))
-        form_layout.addRow("End Time (PT):", self.end_time_input)
         
-        # Format hint
-        hint = QLabel("Time format: YYYY-MM-DD_HH_MM_SS (24-hour, PT timezone)")
-        hint.setStyleSheet("color: #888888; font-size: 11px; font-style: italic;")
-        form_layout.addRow("", hint)
+        end_layout = QHBoxLayout()
+        self.end_date = QDateEdit()
+        self.end_date.setCalendarPopup(True)
+        self.end_date.setDate(QDate(default_end.year, default_end.month, default_end.day))
+        self.end_date.setDisplayFormat("yyyy-MM-dd")
+        end_layout.addWidget(self.end_date)
+        
+        self.end_time = QTimeEdit()
+        self.end_time.setTime(QTime(default_end.hour, default_end.minute, default_end.second))
+        self.end_time.setDisplayFormat("HH:mm:ss")
+        end_layout.addWidget(self.end_time)
+        
+        form_layout.addRow("End (PT):", end_layout)
         
         layout.addLayout(form_layout)
         
@@ -102,6 +116,26 @@ class ExportDialog(QDialog):
             QLineEdit:focus {
                 border: 2px solid #2196F3;
             }
+            QDateEdit, QTimeEdit {
+                background-color: #4a4a4a;
+                color: #e0e0e0;
+                border: 2px solid #555555;
+                border-radius: 6px;
+                padding: 8px;
+                font-size: 14px;
+                min-width: 140px;
+            }
+            QDateEdit:focus, QTimeEdit:focus {
+                border: 2px solid #2196F3;
+            }
+            QDateEdit::drop-down, QTimeEdit::up-button, QTimeEdit::down-button {
+                background-color: #555555;
+                border: none;
+                width: 20px;
+            }
+            QDateEdit::drop-down:hover, QTimeEdit::up-button:hover, QTimeEdit::down-button:hover {
+                background-color: #666666;
+            }
             QPushButton {
                 border: none;
                 border-radius: 6px;
@@ -128,29 +162,31 @@ class ExportDialog(QDialog):
     
     def _on_export_clicked(self):
         """Validate inputs and update test_config.py"""
-        # Get values
+        # Get test name
         test_name = self.test_name_input.text().strip()
-        start_str = self.start_time_input.text().strip()
-        end_str = self.end_time_input.text().strip()
         
         # Validate test name
         if not test_name:
             self._show_error("Invalid Input", "Test name cannot be empty")
             return
         
-        # Validate and parse start time
-        try:
-            start_time = self._parse_datetime(start_str)
-        except ValueError as e:
-            self._show_error("Invalid Start Time", str(e))
-            return
+        # Get start datetime from pickers
+        start_qdate = self.start_date.date()
+        start_qtime = self.start_time.time()
+        start_time = datetime(
+            start_qdate.year(), start_qdate.month(), start_qdate.day(),
+            start_qtime.hour(), start_qtime.minute(), start_qtime.second(),
+            tzinfo=ZoneInfo('America/Los_Angeles')
+        )
         
-        # Validate and parse end time
-        try:
-            end_time = self._parse_datetime(end_str)
-        except ValueError as e:
-            self._show_error("Invalid End Time", str(e))
-            return
+        # Get end datetime from pickers
+        end_qdate = self.end_date.date()
+        end_qtime = self.end_time.time()
+        end_time = datetime(
+            end_qdate.year(), end_qdate.month(), end_qdate.day(),
+            end_qtime.hour(), end_qtime.minute(), end_qtime.second(),
+            tzinfo=ZoneInfo('America/Los_Angeles')
+        )
         
         # Validate start < end
         if start_time >= end_time:
@@ -169,21 +205,6 @@ class ExportDialog(QDialog):
         # Emit signal and close
         self.export_requested.emit()
         self.accept()
-    
-    def _parse_datetime(self, time_str):
-        """Parse datetime from YYYY-MM-DD_HH_MM_SS format in PT timezone"""
-        try:
-            # Parse format
-            dt = datetime.strptime(time_str, '%Y-%m-%d_%H_%M_%S')
-            # Add PT timezone
-            dt_pt = dt.replace(tzinfo=ZoneInfo('America/Los_Angeles'))
-            return dt_pt
-        except ValueError:
-            raise ValueError(
-                f"Invalid format: '{time_str}'\n"
-                f"Expected: YYYY-MM-DD_HH_MM_SS\n"
-                f"Example: 2025-11-17_14_30_00"
-            )
     
     def _update_test_config(self, test_name, start_time, end_time):
         """Update test_config.py with new values"""
