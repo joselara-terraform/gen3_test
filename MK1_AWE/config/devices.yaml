@@ -53,279 +53,142 @@ devices:
 modules:
   NI_cDAQ_Analog:
     # Slot 1: NI-9253 (AI01-AI08)
+    # Hardware config only (test-specific config in sensor_labels.yaml)
     slot_1:
       AI01:
         channel: 0
-        name: "AI01"
-        sensor_type: "current"
-        range_min: 0.004    # 4 mA
-        range_max: 0.020    # 20 mA
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
+        range_min: 0.004    # 4 mA (hardware minimum)
+        range_max: 0.020    # 20 mA (hardware maximum)
       AI02:
         channel: 1
-        name: "AI02"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI03:
         channel: 2
-        name: "AI03"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI04:
         channel: 3
-        name: "AI04"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI05:
         channel: 4
-        name: "AI05"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI06:
         channel: 5
-        name: "AI06"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI07:
         channel: 6
-        name: "AI07"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI08:
         channel: 7
-        name: "AI08"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
     
     # Slot 4: NI-9253 (AI09-AI16)
     slot_4:
       AI09:
         channel: 0
-        name: "AI09"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI10:
         channel: 1
-        name: "AI10"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI11:
         channel: 2
-        name: "AI11"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI12:
         channel: 3
-        name: "AI12"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI13:
         channel: 4
-        name: "AI13"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI14:
         channel: 5
-        name: "AI14"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI15:
         channel: 6
-        name: "AI15"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
       AI16:
         channel: 7
-        name: "AI16"
-        sensor_type: "current"
         range_min: 0.004
         range_max: 0.020
-        eng_min: 0.0
-        eng_max: 100.0
-        eng_unit: "units"
 
   NI_cDAQ_Relays:
     # Slot 2: NI-9485 (RL01-RL08)
+    # Labels defined in sensor_labels.yaml
     slot_2:
       RL01:
         channel: 0
-        name: "RL01"
-        type: "relay"
       RL02:
         channel: 1
-        name: "RL02"
-        type: "relay"
       RL03:
         channel: 2
-        name: "RL03"
-        type: "relay"
       RL04:
         channel: 3
-        name: "RL04"
-        type: "relay"
       RL05:
         channel: 4
-        name: "RL05"
-        type: "relay"
       RL06:
         channel: 5
-        name: "RL06"
-        type: "relay"
       RL07:
         channel: 6
-        name: "RL07"
-        type: "relay"
       RL08:
         channel: 7
-        name: "RL08"
-        type: "relay"
     
     # Slot 3: NI-9485 (RL09-RL16)
     slot_3:
       RL09:
         channel: 0
-        name: "RL09"
-        type: "relay"
       RL10:
         channel: 1
-        name: "RL10"
-        type: "relay"
       RL11:
         channel: 2
-        name: "RL11"
-        type: "relay"
       RL12:
         channel: 3
-        name: "RL12"
-        type: "relay"
       RL13:
         channel: 4
-        name: "RL13"
-        type: "relay"
       RL14:
         channel: 5
-        name: "RL14"
-        type: "relay"
       RL15:
         channel: 6
-        name: "RL15"
-        type: "relay"
       RL16:
         channel: 7
-        name: "RL16"
-        type: "relay"
 
   Pico_TC08_Channels:
+    # Labels in sensor_labels.yaml
     TC01:
       channel: 1
-      name: "TC01"
-      type: "K"  # K-type thermocouple
+      type: "K"
     TC02:
       channel: 2
-      name: "TC02"
       type: "K"
     TC03:
       channel: 3
-      name: "TC03"
       type: "K"
     TC04:
       channel: 4
-      name: "TC04"
       type: "K"
     TC05:
       channel: 5
-      name: "TC05"
       type: "K"
     TC06:
       channel: 6
-      name: "TC06"
       type: "K"
     TC07:
       channel: 7
-      name: "TC07"
       type: "K"
     TC08:
       channel: 8
-      name: "TC08"
       type: "K"
-
-  BGA_Config:
-    BGA01:
-      polling_rate: "10Hz"
-      gases:
-        primary: "1333-74-0"    # H2
-        secondary: "7782-44-7"  # O2
-        purge: "7727-37-9"      # N2
-    BGA02:
-      polling_rate: "10Hz"
-      gases:
-        primary: "7782-44-7"    # O2
-        secondary: "1333-74-0"  # H2
-        purge: "7727-37-9"      # N2
-    BGA03:
-      polling_rate: "10Hz"
-      gases:
-        primary: "1333-74-0"    # H2
-        secondary: "7782-44-7"  # O2
-        purge: "7727-37-9"      # N2
 
   PSU_Registers:
     # Read registers (Function 0x03 - Read Holding Registers)

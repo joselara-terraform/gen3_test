@@ -4,10 +4,10 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel
 from PySide6.QtCore import Qt, Signal
 
 try:
-    from ..config_loader import load_config, get_psu_config
+    from ..config_loader import load_config, get_psu_config, load_sensor_labels
     from ..bga_client import set_secondary_gas
 except ImportError:
-    from config_loader import load_config, get_psu_config
+    from config_loader import load_config, get_psu_config, load_sensor_labels
     from bga_client import set_secondary_gas
 
 
@@ -21,12 +21,12 @@ class BGAPanel(QWidget):
         psu_config = get_psu_config()
         self.is_gen2 = (psu_config.get('mode') == 'gen2')
         
-        # Load BGA gas configuration
-        config = load_config()
-        bga_config = config['modules']['BGA_Config']
-        self.bga01_gases = bga_config['BGA01']['gases']
-        self.bga02_gases = bga_config['BGA02']['gases']
-        self.bga03_gases = bga_config.get('BGA03', {}).get('gases', self.bga01_gases)
+        # Load BGA gas configuration from sensor_labels.yaml
+        labels = load_sensor_labels()
+        bgas = labels.get('bgas', {})
+        self.bga01_gases = bgas.get('BGA01', {}).get('gases', {'primary': '1333-74-0', 'secondary': '7782-44-7', 'purge': '7727-37-9'})
+        self.bga02_gases = bgas.get('BGA02', {}).get('gases', {'primary': '7782-44-7', 'secondary': '1333-74-0', 'purge': '7727-37-9'})
+        self.bga03_gases = bgas.get('BGA03', {}).get('gases', self.bga01_gases)
         
         # Layout
         layout = QVBoxLayout(self)

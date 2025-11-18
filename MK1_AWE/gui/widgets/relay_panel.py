@@ -4,10 +4,10 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGroupBox, QPus
 from PySide6.QtCore import Qt, Signal
 
 try:
-    from ..config_loader import load_config
+    from ..config_loader import load_config, load_sensor_labels
     from ..ni_relay_client import set_relay, set_all_relays
 except ImportError:
-    from config_loader import load_config
+    from config_loader import load_config, load_sensor_labels
     from ni_relay_client import set_relay, set_all_relays
 
 
@@ -21,14 +21,18 @@ class RelayPanel(QWidget):
         self.all_buttons = []
         self.current_setpoint = 0.0  # Track PSU current (unused for now)
         
-        # Load relay configuration
+        # Load relay configuration (hardware + labels)
         config = load_config()
+        labels = load_sensor_labels()
         relay_config = config['modules']['NI_cDAQ_Relays']
+        relay_labels = labels.get('relays', {})
         
-        # Combine all relays from both slots
+        # Combine all relays from both slots with labels
         all_relays = {}
-        all_relays.update(relay_config['slot_2'])
-        all_relays.update(relay_config['slot_3'])
+        for relay_id in relay_config['slot_2'].keys():
+            all_relays[relay_id] = {'label': relay_labels.get(relay_id, relay_id)}
+        for relay_id in relay_config['slot_3'].keys():
+            all_relays[relay_id] = {'label': relay_labels.get(relay_id, relay_id)}
         
         # Main layout
         main_layout = QHBoxLayout(self)
@@ -95,7 +99,7 @@ class RelayPanel(QWidget):
             row = idx // 4
             col = idx % 4
             
-            button = QPushButton(relay_info['name'])
+            button = QPushButton(relay_info['label'])
             button.setCheckable(True)
             button.setEnabled(False)  # Disabled until RLM connects
             button.setProperty("relay_id", relay_id)

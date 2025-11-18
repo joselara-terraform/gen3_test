@@ -97,43 +97,74 @@ def get_psu_config():
     return config['psu_control']
 
 
+def load_sensor_labels():
+    """Load sensor labels from sensor_labels.yaml.
+    
+    Returns:
+        dict: Mapping of sensor names to descriptive labels
+    """
+    labels_path = CONFIG_PATH.parent / "sensor_labels.yaml"
+    
+    if not labels_path.exists():
+        return {}  # Return empty dict if file doesn't exist
+    
+    try:
+        with open(labels_path, 'r') as f:
+            labels_config = yaml.safe_load(f)
+        
+        # Flatten structure into single dict
+        all_labels = {}
+        for category in ['analog_inputs', 'thermocouples', 'relays', 'bgas']:
+            if category in labels_config:
+                all_labels.update(labels_config[category])
+        
+        return all_labels
+    
+    except Exception as e:
+        print(f"Warning: Failed to load sensor_labels.yaml: {e}")
+        return {}
+
+
 def get_sensor_conversions():
-    """Get analog input sensor conversion parameters.
+    """Get analog input sensor conversion parameters (merged from devices.yaml + sensor_labels.yaml).
     
     Returns:
         dict: Channel-specific conversion configs for Gen3 analog inputs
     """
     config = load_config()
+    labels_config = load_sensor_labels()
     
-    # Gen3: Read from NI_cDAQ_Analog (slot_1 and slot_4)
+    # Gen3: Read from NI_cDAQ_Analog (hardware) + sensor_labels (test-specific)
     conversions = {}
     
     try:
         ni_analog = config['modules']['NI_cDAQ_Analog']
+        ai_labels = labels_config.get('analog_inputs', {})
         
         # Slot 1 channels (AI01-AI08)
-        for channel_id, channel_config in ni_analog.get('slot_1', {}).items():
+        for channel_id, hw_config in ni_analog.get('slot_1', {}).items():
+            label_config = ai_labels.get(channel_id, {})
             conversions[channel_id] = {
-                'min_mA': channel_config['range_min'] * 1000,  # Convert A to mA
-                'max_mA': channel_config['range_max'] * 1000,
-                'min_eng': channel_config['eng_min'],
-                'max_eng': channel_config['eng_max'],
-                'unit': channel_config['eng_unit'],
-                'label': channel_config['name']
+                'min_mA': hw_config['range_min'] * 1000,  # Convert A to mA
+                'max_mA': hw_config['range_max'] * 1000,
+                'min_eng': label_config.get('eng_min', 0.0),
+                'max_eng': label_config.get('eng_max', 100.0),
+                'unit': label_config.get('eng_unit', 'units'),
+                'label': label_config.get('label', channel_id)
             }
         
         # Slot 4 channels (AI09-AI16)
-        for channel_id, channel_config in ni_analog.get('slot_4', {}).items():
+        for channel_id, hw_config in ni_analog.get('slot_4', {}).items():
+            label_config = ai_labels.get(channel_id, {})
             conversions[channel_id] = {
-                'min_mA': channel_config['range_min'] * 1000,
-                'max_mA': channel_config['range_max'] * 1000,
-                'min_eng': channel_config['eng_min'],
-                'max_eng': channel_config['eng_max'],
-                'unit': channel_config['eng_unit'],
-                'label': channel_config['name']
+                'min_mA': hw_config['range_min'] * 1000,
+                'max_mA': hw_config['range_max'] * 1000,
+                'min_eng': label_config.get('eng_min', 0.0),
+                'max_eng': label_config.get('eng_max', 100.0),
+                'unit': label_config.get('eng_unit', 'units'),
+                'label': label_config.get('label', channel_id)
             }
     except KeyError:
-        # Fallback: Return empty dict if Gen3 structure not found
         pass
     
     return conversions

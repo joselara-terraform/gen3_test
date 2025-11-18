@@ -32,12 +32,12 @@ def load_config():
     return config
 
 
-def convert_to_engineering_units(current_ma, channel_config):
+def convert_to_engineering_units(current_ma, hw_config, label_config):
     """Convert 4-20mA reading to engineering units"""
-    range_min = channel_config['range_min'] * 1000  # Convert to mA
-    range_max = channel_config['range_max'] * 1000
-    eng_min = channel_config['eng_min']
-    eng_max = channel_config['eng_max']
+    range_min = hw_config['range_min'] * 1000  # Convert to mA
+    range_max = hw_config['range_max'] * 1000
+    eng_min = label_config.get('eng_min', 0.0)
+    eng_max = label_config.get('eng_max', 100.0)
     
     # Clamp to valid range
     current_ma = max(range_min, min(range_max, current_ma))
@@ -52,11 +52,14 @@ def read_analog_inputs():
     global latest_data, latest_relays, device_online
     
     config = load_config()
+    labels_config = yaml.safe_load(open(CONFIG_PATH.parent / "sensor_labels.yaml"))
+    
     device_name = config['devices']['NI_cDAQ']['name']
     slot1_config = config['modules']['NI_cDAQ_Analog']['slot_1']
     slot4_config = config['modules']['NI_cDAQ_Analog']['slot_4']
     slot2_relays = config['modules']['NI_cDAQ_Relays']['slot_2']
     slot3_relays = config['modules']['NI_cDAQ_Relays']['slot_3']
+    ai_labels = labels_config.get('analog_inputs', {})
     
     while True:
         try:
@@ -101,23 +104,25 @@ def read_analog_inputs():
                     idx = 0
                     
                     # Process Slot 1
-                    for ch_name, ch_config in slot1_config.items():
+                    for ch_name, hw_config in slot1_config.items():
                         current_ma = data[idx] * 1000  # Convert A to mA
-                        eng_value = convert_to_engineering_units(current_ma, ch_config)
+                        label_config = ai_labels.get(ch_name, {})
+                        eng_value = convert_to_engineering_units(current_ma, hw_config, label_config)
                         readings[ch_name] = {
                             'value': eng_value,
-                            'unit': ch_config['eng_unit'],
+                            'unit': label_config.get('eng_unit', 'units'),
                             'raw_ma': current_ma
                         }
                         idx += 1
                     
                     # Process Slot 4
-                    for ch_name, ch_config in slot4_config.items():
+                    for ch_name, hw_config in slot4_config.items():
                         current_ma = data[idx] * 1000
-                        eng_value = convert_to_engineering_units(current_ma, ch_config)
+                        label_config = ai_labels.get(ch_name, {})
+                        eng_value = convert_to_engineering_units(current_ma, hw_config, label_config)
                         readings[ch_name] = {
                             'value': eng_value,
-                            'unit': ch_config['eng_unit'],
+                            'unit': label_config.get('eng_unit', 'units'),
                             'raw_ma': current_ma
                         }
                         idx += 1
