@@ -68,41 +68,36 @@ class BGAPanel(QWidget):
         """)
     
     def _toggle_purge(self, checked):
-        """Toggle purge mode for BGAs and valves (Gen2)"""
-        # Import set_primary_gas here
+        """Toggle purge mode for all BGAs"""
+        # Import BGA client functions
         try:
-            from ..bga_client import set_primary_gas
+            from ..bga_client import set_primary_gas, set_secondary_gas
         except ImportError:
-            from bga_client import set_primary_gas
+            from bga_client import set_primary_gas, set_secondary_gas
         
-        # Apply to both BGAs using their individual configs
+        # Apply to all 3 BGAs
         try:
             import time
             
-            # BGA01 - use BGA01 gases
-            if checked:
-                bga01_primary = self.bga01_gases['primary']
-                bga01_secondary = self.bga01_gases['purge']
-            else:
-                bga01_primary = self.bga01_gases['primary']
-                bga01_secondary = self.bga01_gases['secondary']
-            
-            set_primary_gas('BGA01', bga01_primary)
+            # BGA01
+            secondary = self.bga01_gases['purge'] if checked else self.bga01_gases['secondary']
+            set_primary_gas('BGA01', self.bga01_gases['primary'])
             time.sleep(0.05)
-            set_secondary_gas('BGA01', bga01_secondary)
+            set_secondary_gas('BGA01', secondary)
             time.sleep(0.05)
             
-            # BGA02 - use BGA02 gases
-            if checked:
-                bga02_primary = self.bga02_gases['primary']
-                bga02_secondary = self.bga02_gases['purge']
-            else:
-                bga02_primary = self.bga02_gases['primary']
-                bga02_secondary = self.bga02_gases['secondary']
-            
-            set_primary_gas('BGA02', bga02_primary)
+            # BGA02
+            secondary = self.bga02_gases['purge'] if checked else self.bga02_gases['secondary']
+            set_primary_gas('BGA02', self.bga02_gases['primary'])
             time.sleep(0.05)
-            set_secondary_gas('BGA02', bga02_secondary)
+            set_secondary_gas('BGA02', secondary)
+            time.sleep(0.05)
+            
+            # BGA03
+            secondary = self.bga03_gases['purge'] if checked else self.bga03_gases['secondary']
+            set_primary_gas('BGA03', self.bga03_gases['primary'])
+            time.sleep(0.05)
+            set_secondary_gas('BGA03', secondary)
             
             # Gen2 mode: Also control purge valves (RL02, RL03)
             if self.is_gen2:
@@ -126,26 +121,26 @@ class BGAPanel(QWidget):
             
             # Import here to avoid circular dependency
             try:
-                from ..bga_client import set_primary_gas
+                from ..bga_client import set_primary_gas, set_secondary_gas
             except ImportError:
-                from bga_client import set_primary_gas
+                from bga_client import set_primary_gas, set_secondary_gas
             
-            # BGA01 - use BGA01 normal gases from config
-            bga01_primary = self.bga01_gases['primary']
-            bga01_secondary = self.bga01_gases['secondary']
-            
-            set_primary_gas('BGA01', bga01_primary)
+            # BGA01
+            set_primary_gas('BGA01', self.bga01_gases['primary'])
             time.sleep(0.05)
-            set_secondary_gas('BGA01', bga01_secondary)
+            set_secondary_gas('BGA01', self.bga01_gases['secondary'])
             time.sleep(0.05)
             
-            # BGA02 - use BGA02 normal gases from config
-            bga02_primary = self.bga02_gases['primary']
-            bga02_secondary = self.bga02_gases['secondary']
-            
-            set_primary_gas('BGA02', bga02_primary)
+            # BGA02
+            set_primary_gas('BGA02', self.bga02_gases['primary'])
             time.sleep(0.05)
-            set_secondary_gas('BGA02', bga02_secondary)
+            set_secondary_gas('BGA02', self.bga02_gases['secondary'])
+            time.sleep(0.05)
+            
+            # BGA03
+            set_primary_gas('BGA03', self.bga03_gases['primary'])
+            time.sleep(0.05)
+            set_secondary_gas('BGA03', self.bga03_gases['secondary'])
             
             # Reset button to unchecked
             self.purge_button.setChecked(False)

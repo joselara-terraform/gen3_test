@@ -121,6 +121,7 @@ class MainWindow(QMainWindow):
         bga2_online = status_results.get('BGA02', False)
         bga3_online = status_results.get('BGA03', False)
         bgas_online = bga1_online or bga2_online or bga3_online
+        # Note: Panel only checks BGA01/02 for button enable, but commands apply to all 3
         self.bga_panel.set_hardware_available(bga1_online, bga2_online)
         
         # Initialize BGAs to safe state on first connection

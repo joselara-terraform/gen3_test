@@ -47,12 +47,13 @@ def get_bga_ports():
     """Get BGA HTTP bridge ports.
     
     Returns:
-        dict: {device_id: http_port} for BGA01 and BGA02
+        dict: {device_id: http_port} for BGA01/02/03
     """
     config = load_config()
     return {
-        'BGA01': config['modules']['BGA01']['http_port'],
-        'BGA02': config['modules']['BGA02']['http_port']
+        'BGA01': config['devices']['BGA01']['http_port'],
+        'BGA02': config['devices']['BGA02']['http_port'],
+        'BGA03': config['devices']['BGA03']['http_port']
     }
 
 

@@ -23,7 +23,7 @@ def set_primary_gas(bga_id, cas, timeout=1):
     """
     ports = get_bga_ports()
     if bga_id not in ports:
-        raise ValueError(f"Invalid BGA ID: {bga_id}. Must be BGA01 or BGA02")
+        raise ValueError(f"Invalid BGA ID: {bga_id}. Must be BGA01, BGA02, or BGA03")
     
     port = ports[bga_id]
     url = f"http://localhost:{port}/command"
@@ -52,7 +52,7 @@ def set_secondary_gas(bga_id, cas, timeout=1):
     """
     ports = get_bga_ports()
     if bga_id not in ports:
-        raise ValueError(f"Invalid BGA ID: {bga_id}. Must be BGA01 or BGA02")
+        raise ValueError(f"Invalid BGA ID: {bga_id}. Must be BGA01, BGA02, or BGA03")
     
     port = ports[bga_id]
     url = f"http://localhost:{port}/command"
