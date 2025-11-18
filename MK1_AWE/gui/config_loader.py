@@ -101,24 +101,20 @@ def load_sensor_labels():
     """Load sensor labels from sensor_labels.yaml.
     
     Returns:
-        dict: Mapping of sensor names to descriptive labels
+        dict: Sensor label configuration
     """
-    labels_path = CONFIG_PATH.parent / "sensor_labels.yaml"
+    # Get path to sensor_labels.yaml (same directory as devices.yaml)
+    config_dir = os.path.join(os.path.dirname(__file__), '..', 'config')
+    labels_path = os.path.join(config_dir, 'sensor_labels.yaml')
     
-    if not labels_path.exists():
+    if not os.path.exists(labels_path):
         return {}  # Return empty dict if file doesn't exist
     
     try:
         with open(labels_path, 'r') as f:
             labels_config = yaml.safe_load(f)
         
-        # Flatten structure into single dict
-        all_labels = {}
-        for category in ['analog_inputs', 'thermocouples', 'relays', 'bgas']:
-            if category in labels_config:
-                all_labels.update(labels_config[category])
-        
-        return all_labels
+        return labels_config
     
     except Exception as e:
         print(f"Warning: Failed to load sensor_labels.yaml: {e}")
