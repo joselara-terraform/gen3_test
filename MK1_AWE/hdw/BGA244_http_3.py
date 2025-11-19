@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
-"""HTTP server for BGA03 (COM10) metrics on port 8890"""
+"""HTTP server for BGA03 metrics on port 8890"""
 import serial
 import time
+import yaml
+from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 import threading
 
-# BGA Configuration
-COM_PORT = "COM10"
-BAUD_RATE = 9600
+# Load configuration
+CONFIG_PATH = Path(__file__).parent.parent / "config" / "devices.yaml"
+with open(CONFIG_PATH, 'r') as f:
+    config = yaml.safe_load(f)
+
+# BGA Configuration from devices.yaml
+COM_PORT = config['devices']['BGA03']['com_port']
+BAUD_RATE = config['devices']['BGA03']['baud_rate']
+HTTP_PORT = config['devices']['BGA03']['http_port']
 GASES = {"7782-44-7": "O2", "1333-74-0": "H2", "7727-37-9": "N2"}
 OVERLOAD = 9.9E37
 
@@ -175,9 +183,10 @@ def main():
     poll_thread.start()
     
     # Start HTTP server
-    server = HTTPServer(('localhost', 8890), MetricsHandler)
-    print(f"BGA03 HTTP server started on port 8890")
+    server = HTTPServer(('localhost', HTTP_PORT), MetricsHandler)
+    print(f"BGA03 HTTP server started on port {HTTP_PORT}")
     print(f"Polling BGA on {COM_PORT} at {BAUD_RATE} baud")
+    print(f"Config: {CONFIG_PATH}")
     
     try:
         server.serve_forever()
