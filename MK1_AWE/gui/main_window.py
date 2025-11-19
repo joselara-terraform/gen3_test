@@ -116,20 +116,16 @@ class MainWindow(QMainWindow):
         elif not rlm_online and 'RLM' in self.initialized_devices:
             self.initialized_devices.discard('RLM')
         
-        # BGA panel: enabled if at least one BGA is online
-        bga1_online = status_results.get('BGA01', False)
-        bga2_online = status_results.get('BGA02', False)
-        bga3_online = status_results.get('BGA03', False)
-        bgas_online = bga1_online or bga2_online or bga3_online
-        # Note: Panel only checks BGA01/02 for button enable, but commands apply to all 3
-        self.bga_panel.set_hardware_available(bga1_online, bga2_online)
+        # BGA panel: enabled when RLM online (controls purge relays RL02, RL04)
+        rlm_online = status_results.get('RLM', False)
+        self.bga_panel.set_hardware_available(rlm_online)
         
-        # Initialize BGAs to safe state on first connection
-        if bgas_online and 'BGA' not in self.initialized_devices:
-            self.bga_panel.set_normal_mode()
-            self.initialized_devices.add('BGA')
-        elif not bgas_online and 'BGA' in self.initialized_devices:
-            self.initialized_devices.discard('BGA')
+        # Initialize purge to safe state on first RLM connection
+        if rlm_online and 'PURGE' not in self.initialized_devices:
+            self.bga_panel.set_normal_mode()  # Close purge valves
+            self.initialized_devices.add('PURGE')
+        elif not rlm_online and 'PURGE' in self.initialized_devices:
+            self.initialized_devices.discard('PURGE')
         
         # PSU panel: Enable when PSU online
         psu_online = status_results.get('PSU', False)
@@ -243,12 +239,12 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 print(f"Error setting RLM to safe state on shutdown: {e}")
         
-        # Return BGAs to safe state
-        if 'BGA' in self.initialized_devices:
+        # Close purge valves
+        if 'PURGE' in self.initialized_devices:
             try:
                 self.bga_panel.set_normal_mode()
             except Exception as e:
-                print(f"Error setting BGAs to safe state on shutdown: {e}")
+                print(f"Error closing purge valves on shutdown: {e}")
         
         print("Safe shutdown complete")
         event.accept()

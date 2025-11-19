@@ -33,10 +33,10 @@ class BGAPanel(QWidget):
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(15)
         
-        # Purge button
-        self.purge_button = QPushButton("PURGE")
+        # Purge button (controls RL02, RL04)
+        self.purge_button = QPushButton("PURGE\nVALVES")
         self.purge_button.setCheckable(True)
-        self.purge_button.setEnabled(False)  # Disabled until at least 1 BGA connects
+        self.purge_button.setEnabled(False)  # Disabled until RLM connects
         self.purge_button.setMinimumHeight(100)
         self.purge_button.clicked.connect(self._toggle_purge)
         layout.addWidget(self.purge_button)
@@ -68,84 +68,47 @@ class BGAPanel(QWidget):
         """)
     
     def _toggle_purge(self, checked):
-        """Toggle purge mode for all BGAs"""
-        # Import BGA client functions
+        """Toggle purge relays (RL02 H2 Purge, RL04 O2 Purge)"""
+        # Import relay client
         try:
-            from ..bga_client import set_primary_gas, set_secondary_gas
+            from ..ni_relay_client import set_relay
         except ImportError:
-            from bga_client import set_primary_gas, set_secondary_gas
+            from ni_relay_client import set_relay
         
-        # Apply to all 3 BGAs
         try:
-            import time
+            # Control purge relays
+            set_relay('RL02', checked)  # H2 Purge
+            set_relay('RL04', checked)  # O2 Purge
             
-            # BGA01
-            secondary = self.bga01_gases['purge'] if checked else self.bga01_gases['secondary']
-            set_primary_gas('BGA01', self.bga01_gases['primary'])
-            time.sleep(0.05)
-            set_secondary_gas('BGA01', secondary)
-            time.sleep(0.05)
-            
-            # BGA02
-            secondary = self.bga02_gases['purge'] if checked else self.bga02_gases['secondary']
-            set_primary_gas('BGA02', self.bga02_gases['primary'])
-            time.sleep(0.05)
-            set_secondary_gas('BGA02', secondary)
-            time.sleep(0.05)
-            
-            # BGA03
-            secondary = self.bga03_gases['purge'] if checked else self.bga03_gases['secondary']
-            set_primary_gas('BGA03', self.bga03_gases['primary'])
-            time.sleep(0.05)
-            set_secondary_gas('BGA03', secondary)
-            
-            # Gen2 mode: Also control purge valves (RL02, RL03)
-            if self.is_gen2:
-                time.sleep(0.05)
-                self.purge_valves_control.emit(checked)
-                
+            print(f"Purge valves: {'OPEN' if checked else 'CLOSED'} (RL02, RL04)")
+        
         except Exception as e:
-            print(f"Error setting BGA gases: {e}")
-            # Revert button state on error
+            print(f"Error toggling purge: {e}")
+            # Revert button on error
             self.purge_button.setChecked(not checked)
     
-    def set_hardware_available(self, bga1_online, bga2_online):
-        """Enable/disable purge button based on BGA availability"""
-        # Enable if at least one BGA is online
-        self.purge_button.setEnabled(bga1_online or bga2_online)
+    def set_hardware_available(self, rlm_online):
+        """Enable/disable purge button based on RLM (relay) availability"""
+        # Enable if relays are online (controls RL02, RL04)
+        self.purge_button.setEnabled(rlm_online)
     
     def set_normal_mode(self):
-        """Set BGAs to normal operation mode (safe state)"""
+        """Set purge to safe state (valves closed)"""
         try:
-            import time
-            
-            # Import here to avoid circular dependency
+            # Import relay client
             try:
-                from ..bga_client import set_primary_gas, set_secondary_gas
+                from ..ni_relay_client import set_relay
             except ImportError:
-                from bga_client import set_primary_gas, set_secondary_gas
+                from ni_relay_client import set_relay
             
-            # BGA01
-            set_primary_gas('BGA01', self.bga01_gases['primary'])
-            time.sleep(0.05)
-            set_secondary_gas('BGA01', self.bga01_gases['secondary'])
-            time.sleep(0.05)
-            
-            # BGA02
-            set_primary_gas('BGA02', self.bga02_gases['primary'])
-            time.sleep(0.05)
-            set_secondary_gas('BGA02', self.bga02_gases['secondary'])
-            time.sleep(0.05)
-            
-            # BGA03
-            set_primary_gas('BGA03', self.bga03_gases['primary'])
-            time.sleep(0.05)
-            set_secondary_gas('BGA03', self.bga03_gases['secondary'])
+            # Close purge valves
+            set_relay('RL02', False)  # H2 Purge closed
+            set_relay('RL04', False)  # O2 Purge closed
             
             # Reset button to unchecked
             self.purge_button.setChecked(False)
             
-            print("BGAs set to normal mode (safe state)")
+            print("Purge valves set to safe state (CLOSED)")
         except Exception as e:
-            print(f"Error setting BGAs to safe state: {e}")
+            print(f"Error setting purge to safe state: {e}")
 
