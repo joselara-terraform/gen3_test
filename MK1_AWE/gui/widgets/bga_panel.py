@@ -68,7 +68,7 @@ class BGAPanel(QWidget):
         """)
     
     def _toggle_purge(self, checked):
-        """Toggle purge relays (RL02 H2 Purge, RL04 O2 Purge)"""
+        """Toggle purge relays (RL04 O2 Purge, RL06 Deoxo)"""
         # Import relay client
         try:
             from ..ni_relay_client import set_relay
@@ -77,10 +77,10 @@ class BGAPanel(QWidget):
         
         try:
             # Control purge relays
-            set_relay('RL02', checked)  # H2 Purge
             set_relay('RL04', checked)  # O2 Purge
+            set_relay('RL06', checked)  # Deoxo
             
-            print(f"Purge valves: {'OPEN' if checked else 'CLOSED'} (RL02, RL04)")
+            print(f"Purge valves: {'OPEN' if checked else 'CLOSED'} (RL04, RL06)")
         
         except Exception as e:
             print(f"Error toggling purge: {e}")
@@ -102,8 +102,8 @@ class BGAPanel(QWidget):
                 from ni_relay_client import set_relay
             
             # Close purge valves
-            set_relay('RL02', False)  # H2 Purge closed
             set_relay('RL04', False)  # O2 Purge closed
+            set_relay('RL06', False)  # Deoxo closed
             
             # Reset button to unchecked
             self.purge_button.setChecked(False)

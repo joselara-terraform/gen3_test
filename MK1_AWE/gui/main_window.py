@@ -116,8 +116,7 @@ class MainWindow(QMainWindow):
         elif not rlm_online and 'RLM' in self.initialized_devices:
             self.initialized_devices.discard('RLM')
         
-        # BGA panel: enabled when RLM online (controls purge relays RL02, RL04)
-        rlm_online = status_results.get('RLM', False)
+        # Purge panel: enabled when RLM online (controls purge relays RL04, RL06)
         self.bga_panel.set_hardware_available(rlm_online)
         
         # Initialize purge to safe state on first RLM connection
