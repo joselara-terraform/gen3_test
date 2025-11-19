@@ -132,9 +132,17 @@ class RelayPanel(QWidget):
         """Update PSU current setpoint (kept for compatibility)"""
         self.current_setpoint = amps
     
+    def update_relay_button_state(self, relay_id, state):
+        """Update button visual state (called when relay controlled externally)"""
+        for button in self.all_buttons:
+            if button.property("relay_id") == relay_id:
+                button.setChecked(state)
+                break
+    
     def set_purge_valves(self, purge_active):
-        """Unlinked from relays - kept for compatibility"""
-        pass
+        """Update RL04 and RL06 button states when purge toggled"""
+        self.update_relay_button_state('RL04', purge_active)
+        self.update_relay_button_state('RL06', purge_active)
     
     def _toggle_relay(self, relay_id, state):
         """Toggle relay via NI-DAQmx"""

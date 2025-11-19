@@ -86,6 +86,9 @@ class MainWindow(QMainWindow):
         # Connect save button from hardware status widget
         self.hw_status_widget.save_clicked.connect(self._on_save_clicked)
         
+        # Connect purge button to relay panel (update button states)
+        self.bga_panel.purge_relays_changed.connect(self.relay_panel.set_purge_valves)
+        
         # Start background worker to refresh status every 5 seconds
         self.status_timer = QTimer(self)
         self.status_timer.timeout.connect(self.hw_status_widget.update_status)

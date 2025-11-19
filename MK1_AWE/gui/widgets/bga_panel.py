@@ -12,7 +12,7 @@ except ImportError:
 
 
 class BGAPanel(QWidget):
-    purge_valves_control = Signal(bool)  # Signal to control purge valves (Gen2 only)
+    purge_relays_changed = Signal(bool)  # Signal when purge relays change (RL04, RL06)
     
     def __init__(self):
         super().__init__()
@@ -33,8 +33,8 @@ class BGAPanel(QWidget):
         layout.setContentsMargins(15, 15, 15, 15)
         layout.setSpacing(15)
         
-        # Purge button (controls RL02, RL04)
-        self.purge_button = QPushButton("PURGE\nVALVES")
+        # Purge button (controls RL04, RL06)
+        self.purge_button = QPushButton("PURGE")
         self.purge_button.setCheckable(True)
         self.purge_button.setEnabled(False)  # Disabled until RLM connects
         self.purge_button.setMinimumHeight(100)
@@ -79,6 +79,9 @@ class BGAPanel(QWidget):
             # Control purge relays
             set_relay('RL04', checked)  # O2 Purge
             set_relay('RL06', checked)  # Deoxo
+            
+            # Emit signal so relay panel can update button states
+            self.purge_relays_changed.emit(checked)
             
             print(f"Purge valves: {'OPEN' if checked else 'CLOSED'} (RL04, RL06)")
         
