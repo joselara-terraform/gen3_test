@@ -68,7 +68,7 @@ class BGAPanel(QWidget):
         """)
     
     def _toggle_purge(self, checked):
-        """Toggle purge relays (RL04 O2 Purge, RL06 Deoxo)"""
+        """Toggle purge relays (RL04 O2 Purge, RL06 H2 Purge)"""
         # Import relay client
         try:
             from ..ni_relay_client import set_relay
@@ -78,7 +78,7 @@ class BGAPanel(QWidget):
         try:
             # Control purge relays
             set_relay('RL04', checked)  # O2 Purge
-            set_relay('RL06', checked)  # Deoxo
+            set_relay('RL06', checked)  # H2 Purge
             
             # Emit signal so relay panel can update button states
             self.purge_relays_changed.emit(checked)
@@ -95,6 +95,38 @@ class BGAPanel(QWidget):
         # Enable if relays are online (controls RL02, RL04)
         self.purge_button.setEnabled(rlm_online)
     
+    def initialize_bgas(self):
+        """Initialize all BGAs to normal gas configuration (safe state)"""
+        try:
+            import time
+            
+            # Import BGA client
+            try:
+                from ..bga_client import set_primary_gas, set_secondary_gas
+            except ImportError:
+                from bga_client import set_primary_gas, set_secondary_gas
+            
+            # BGA01 - set to normal gases
+            set_primary_gas('BGA01', self.bga01_gases['primary'])
+            time.sleep(0.05)
+            set_secondary_gas('BGA01', self.bga01_gases['secondary'])
+            time.sleep(0.05)
+            
+            # BGA02 - set to normal gases
+            set_primary_gas('BGA02', self.bga02_gases['primary'])
+            time.sleep(0.05)
+            set_secondary_gas('BGA02', self.bga02_gases['secondary'])
+            time.sleep(0.05)
+            
+            # BGA03 - set to normal gases
+            set_primary_gas('BGA03', self.bga03_gases['primary'])
+            time.sleep(0.05)
+            set_secondary_gas('BGA03', self.bga03_gases['secondary'])
+            
+            print("BGAs initialized to normal gas configuration (safe state)")
+        except Exception as e:
+            print(f"Error initializing BGAs: {e}")
+    
     def set_normal_mode(self):
         """Set purge to safe state (valves closed)"""
         try:
@@ -106,7 +138,7 @@ class BGAPanel(QWidget):
             
             # Close purge valves
             set_relay('RL04', False)  # O2 Purge closed
-            set_relay('RL06', False)  # Deoxo closed
+            set_relay('RL06', False)  # H2 Purge closed
             
             # Reset button to unchecked
             self.purge_button.setChecked(False)

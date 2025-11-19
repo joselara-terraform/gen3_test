@@ -129,6 +129,18 @@ class MainWindow(QMainWindow):
         elif not rlm_online and 'PURGE' in self.initialized_devices:
             self.initialized_devices.discard('PURGE')
         
+        # Initialize BGAs to normal gases on first connection
+        bga1_online = status_results.get('BGA01', False)
+        bga2_online = status_results.get('BGA02', False)
+        bga3_online = status_results.get('BGA03', False)
+        bgas_online = bga1_online or bga2_online or bga3_online
+        
+        if bgas_online and 'BGA' not in self.initialized_devices:
+            self.bga_panel.initialize_bgas()
+            self.initialized_devices.add('BGA')
+        elif not bgas_online and 'BGA' in self.initialized_devices:
+            self.initialized_devices.discard('BGA')
+        
         # PSU panel: Enable when PSU online
         psu_online = status_results.get('PSU', False)
         psu_count = 1 if psu_online else 0
@@ -240,6 +252,13 @@ class MainWindow(QMainWindow):
                 self.relay_panel.set_all_off()
             except Exception as e:
                 print(f"Error setting RLM to safe state on shutdown: {e}")
+        
+        # Return BGAs to normal gases
+        if 'BGA' in self.initialized_devices:
+            try:
+                self.bga_panel.initialize_bgas()
+            except Exception as e:
+                print(f"Error setting BGAs to normal on shutdown: {e}")
         
         # Close purge valves
         if 'PURGE' in self.initialized_devices:
