@@ -82,32 +82,20 @@ def read_analog_inputs():
                         name_to_assign_to_channel=ch_name
                     )
                 
-                # Configure timing
+                # Configure timing - use on-demand mode for freshest data
                 task.timing.cfg_samp_clk_timing(
                     rate=SAMPLE_RATE,
-                    sample_mode=nidaqmx.constants.AcquisitionType.CONTINUOUS
+                    sample_mode=nidaqmx.constants.AcquisitionType.FINITE,
+                    samps_per_chan=1
                 )
-                
-                # Set small buffer to avoid reading stale data
-                task.in_stream.input_buf_size = SAMPLE_RATE * 16 * 2  # 2 seconds max
                 
                 print(f"✓ Connected to {device_name}")
                 device_online = True
                 
                 # Read loop
                 while True:
-                    # Check how many samples are available
-                    available = task.in_stream.avail_samp_per_chan
-                    
-                    # If buffer has data, read all available and keep only latest
-                    if available > 1:
-                        data = task.read(number_of_samples_per_channel=available)
-                        # Keep only last sample (most recent)
-                        if isinstance(data[0], list):
-                            data = [ch_data[-1] for ch_data in data]
-                    else:
-                        # Read single sample
-                        data = task.read()
+                    # Read one sample from all channels
+                    data = task.read()
                     
                     # Convert to engineering units
                     readings = {}
