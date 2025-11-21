@@ -1,7 +1,13 @@
 @echo off
+setlocal
 
-call cameras.bat
+rem --- Run the camera launcher batch that lives in the same folder as this file ---
+call "%~dp0cameras.bat"
 
-timeout /t 6 >nul
+rem --- Wait a bit so all VLC windows actually open ---
+timeout /t 6 /nobreak >nul
 
-"C:\Program Files\AutoHotkey\AutoHotkeyUX.exe" "C:\Users\terra\Desktop\gen3_test\cameras\cameras.ahk"
+rem --- Run the AutoHotkey script that lives in the same folder as this file ---
+"C:\Program Files\AutoHotkey\AutoHotkeyUX.exe" "%~dp0cameras.ahk"
+
+endlocal

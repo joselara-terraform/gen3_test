@@ -3,7 +3,7 @@
 ; Wait for VLC windows to appear
 Sleep 5000
 
-; Get all VLC windows
+; Get all VLC windows (by process name)
 winList := WinGetList("ahk_exe vlc.exe")
 
 if (winList.Length = 0) {
@@ -12,8 +12,7 @@ if (winList.Length = 0) {
 }
 
 ; ----- GRID CONFIG -----
-; 3 columns x 2 rows (for 6 cameras)
-
+; 3 columns x 2 rows (for 6 cameras on one screen)
 cols := 3
 rows := 2
 
@@ -38,7 +37,7 @@ Loop rows {
     }
 }
 
-; Move each VLC window
+; Move each VLC window into its slot
 Loop winList.Length {
     idx := A_Index
     if (idx > positions.Length)
@@ -48,7 +47,7 @@ Loop winList.Length {
     p := positions[idx]
 
     WinRestore(hwnd)
-    WinMove(hwnd, p.x, p.y, p.w, p.h)
+    WinMove(hwnd, p["x"], p["y"], p["w"], p["h"])
 }
 
 ExitApp
