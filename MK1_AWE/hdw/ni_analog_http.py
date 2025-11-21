@@ -20,7 +20,6 @@ app = Flask(__name__)
 
 # Global state
 latest_data = {}
-latest_relays = {}
 device_online = False
 data_lock = threading.Lock()
 
@@ -48,8 +47,8 @@ def convert_to_engineering_units(current_ma, hw_config, label_config):
 
 
 def read_analog_inputs():
-    """Continuously read analog inputs and relay states from NI cDAQ"""
-    global latest_data, latest_relays, device_online
+    """Continuously read analog inputs from NI cDAQ"""
+    global latest_data, device_online
     
     config = load_config()
     labels_config = yaml.safe_load(open(CONFIG_PATH.parent / "sensor_labels.yaml"))
@@ -57,8 +56,6 @@ def read_analog_inputs():
     device_name = config['devices']['NI_cDAQ']['name']
     slot1_config = config['modules']['NI_cDAQ_Analog']['slot_1']
     slot4_config = config['modules']['NI_cDAQ_Analog']['slot_4']
-    slot2_relays = config['modules']['NI_cDAQ_Relays']['slot_2']
-    slot3_relays = config['modules']['NI_cDAQ_Relays']['slot_3']
     ai_labels = labels_config.get('analog_inputs', {})
     
     while True:
@@ -127,36 +124,10 @@ def read_analog_inputs():
                         }
                         idx += 1
                     
-                    # Read relay states (separate task)
-                    relay_states = {}
-                    
-                    # Read Slot 2 relays (RL01-RL08)
-                    for relay_name, relay_config in slot2_relays.items():
-                        ch_num = relay_config['channel']
-                        try:
-                            with nidaqmx.Task() as relay_task:
-                                relay_task.di_channels.add_di_chan(f"{device_name}Mod2/port0/line{ch_num}")
-                                state = relay_task.read()
-                                relay_states[relay_name] = 1 if state else 0
-                        except:
-                            relay_states[relay_name] = 0
-                    
-                    # Read Slot 3 relays (RL09-RL16)
-                    for relay_name, relay_config in slot3_relays.items():
-                        ch_num = relay_config['channel']
-                        try:
-                            with nidaqmx.Task() as relay_task:
-                                relay_task.di_channels.add_di_chan(f"{device_name}Mod3/port0/line{ch_num}")
-                                state = relay_task.read()
-                                relay_states[relay_name] = 1 if state else 0
-                        except:
-                            relay_states[relay_name] = 0
-                    
                     # Update global state
                     with data_lock:
                         latest_data['timestamp'] = time.time()
                         latest_data['readings'] = readings
-                        latest_relays['states'] = relay_states
                     
                     time.sleep(1.0 / SAMPLE_RATE)
         
@@ -178,23 +149,14 @@ def metrics():
             return Response("# No data yet\n", status=503, mimetype='text/plain')
         
         readings = latest_data['readings']
-        relay_states = latest_relays.get('states', {})
         timestamp = latest_data['timestamp']
     
-    # Build InfluxDB line protocol
+    # Build InfluxDB line protocol (analog inputs only)
     lines = []
-    
-    # Analog input metrics
     for ch_name, data in readings.items():
         # Format: measurement,tag1=value1 field1=value1,field2=value2 timestamp
         line = f"ni_analog,channel={ch_name} value={data['value']:.3f},raw_ma={data['raw_ma']:.3f} {int(timestamp * 1e9)}"
         lines.append(line)
-    
-    # Relay state metrics (single line with all relays)
-    if relay_states:
-        relay_fields = ','.join([f"{name}={state}i" for name, state in sorted(relay_states.items())])
-        relay_line = f"ni_relays {relay_fields} {int(timestamp * 1e9)}"
-        lines.append(relay_line)
     
     output = '\n'.join(lines) + '\n'
     return Response(output, mimetype='text/plain')
