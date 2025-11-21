@@ -105,14 +105,14 @@ analog_inputs:
 # Thermocouples (8 channels)
 # Just labels for now (K-type defined in devices.yaml)
 thermocouples:
-  TC01: "Electrolyte Temperature"
-  TC02: "H2 Header Temperature"
-  TC03: "O2 Hubbler Temperature"
-  TC04: "H2 HX Outlet Temperature"
-  TC05: "H2 BoP Gas Line Temperature"
-  TC06: "Deoxo Top Temperature"
-  TC07: "Deoxo Bottom Temperature"
-  TC08: "Post-Condensing Coil Temperature"
+  TC01: "Electrolyte CMS4"
+  TC02: "Electrolyte CMS5"
+  TC03: "O2 Hubbler Outlet"
+  TC04: "H2 Hubbler Outlet"
+  TC05: "NA" - X
+  TC06: "Deoxo"
+  TC07: "Deoxo Outlet"
+  TC08: "Post-Condensing Coil"
 
 # Relays (16 channels)
 # Just labels for now
