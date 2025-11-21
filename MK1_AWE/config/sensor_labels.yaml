@@ -45,7 +45,7 @@ analog_inputs:
     label: "H2 Flowrate"
     sensor_type: "flow"
     eng_min: 0.0
-    eng_max: 120
+    eng_max: 250
     eng_unit: "SLM"
   AI08:
     label: "PT06"
@@ -57,7 +57,7 @@ analog_inputs:
     label: "Measured Voltage"
     sensor_type: "voltage"
     eng_min: 0.0
-    eng_max: 500
+    eng_max: 1000
     eng_unit: "V"
   AI10:
     label: "AI10"
