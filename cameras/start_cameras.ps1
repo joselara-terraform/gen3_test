@@ -1,27 +1,32 @@
 # Start cameras and arrange in 2x3 grid on 3440x1440 monitor
 $VLC = "C:\Program Files\VideoLAN\VLC\vlc.exe"
 
-# Camera URLs
+# Camera URLs (5 cameras - removed 192.168.0.101)
 $cameras = @(
     "rtsp://192.168.0.180:554/main/av",
     "rtsp://192.168.0.181:554/main/av",
     "rtsp://192.168.0.182:554/main/av",
     "rtsp://admin:Carbonneutral1!@192.168.0.100:554/h264Preview_01_main",
-    "rtsp://admin:Carbonneutral1!@192.168.0.101:554/h264Preview_01_main",
     "rtsp://admin:Carbonneutral1!@192.168.0.3:554/h264Preview_01_main"
 )
 
-# Grid positions for 2x3 layout (3440x1440 monitor)
+# Grid positions for 2x3 layout on 2nd monitor (3440x1440)
+# Monitor offset: 3440 pixels (moves to 2nd screen)
+# Position (1,0) is reserved for GUI
+$monitor_offset = 3440
 $width = 1147
 $height = 720
 $positions = @(
-    @{X=0;    Y=0;   W=$width; H=$height},  # Top-left
-    @{X=1147; Y=0;   W=$width; H=$height},  # Top-center
-    @{X=2294; Y=0;   W=$width; H=$height},  # Top-right
-    @{X=0;    Y=720; W=$width; H=$height},  # Bottom-left
-    @{X=1147; Y=720; W=$width; H=$height},  # Bottom-center
-    @{X=2294; Y=720; W=$width; H=$height}   # Bottom-right
+    @{X=$monitor_offset+0;    Y=0;   W=$width; H=$height},  # (0,0) Cam1
+    # (1,0) is GUI position - skip
+    @{X=$monitor_offset+2294; Y=0;   W=$width; H=$height},  # (2,0) Cam2
+    @{X=$monitor_offset+0;    Y=720; W=$width; H=$height},  # (0,1) Cam3
+    @{X=$monitor_offset+1147; Y=720; W=$width; H=$height},  # (1,1) Cam4
+    @{X=$monitor_offset+2294; Y=720; W=$width; H=$height}   # (2,1) Cam5
 )
+
+# GUI position (exported for GUI to use)
+$global:GUI_POSITION = @{X=$monitor_offset+1147; Y=0; W=$width; H=$height}  # (1,0) Top-center
 
 # Windows API for window positioning
 Add-Type @"

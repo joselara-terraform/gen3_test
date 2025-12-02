@@ -21,6 +21,14 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Gen3 AWE Control App")
         self.setMinimumSize(1000, 700)
         
+        # Position GUI in grid (2nd monitor, position 1,0)
+        monitor_offset = 3440
+        gui_x = monitor_offset + 1147  # Top-center position
+        gui_y = 0
+        gui_w = 1147
+        gui_h = 720
+        self.setGeometry(gui_x, gui_y, gui_w, gui_h)
+        
         # Track which devices have been initialized to safe state
         self.initialized_devices = set()
         
