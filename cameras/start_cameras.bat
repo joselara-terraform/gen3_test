@@ -1,13 +1,9 @@
 @echo off
-setlocal
+set VLC="C:\Program Files\VideoLAN\VLC\vlc.exe"
 
-rem --- Run the camera launcher batch that lives in the same folder as this file ---
-call "%~dp0cameras.bat"
-
-rem --- Wait a bit so all VLC windows actually open ---
-timeout /t 6 /nobreak >nul
-
-rem --- Run the AutoHotkey script that lives in the same folder as this file ---
-"C:\Program Files\AutoHotkey\AutoHotkeyUX.exe" "%~dp0cameras.ahk"
-
-endlocal
+start "" %VLC% "rtsp://192.168.0.180:554/main/av"
+start "" %VLC% "rtsp://192.168.0.181:554/main/av"
+start "" %VLC% "rtsp://192.168.0.182:554/main/av"
+start "" %VLC% "rtsp://admin:Carbonneutral1!@192.168.0.100:554/h264Preview_01_main"
+start "" %VLC% "rtsp://admin:Carbonneutral1!@192.168.0.101:554/h264Preview_01_main"
+start "" %VLC% "rtsp://admin:Carbonneutral1!@192.168.0.3:554/h264Preview_01_main"
