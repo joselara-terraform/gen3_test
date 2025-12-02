@@ -49,6 +49,24 @@ devices:
     slave_id: 1
     timeout: 0.5
 
+  # Cameras (RTSP streams)
+  cameras:
+    cam01:
+      url: "rtsp://192.168.0.180:554/main/av"
+      grid_position: [1, 0]  # Top-center
+    cam02:
+      url: "rtsp://192.168.0.181:554/main/av"
+      grid_position: [2, 0]  # Top-right
+    cam03:
+      url: "rtsp://admin:Carbonneutral1!@192.168.0.100:554/h264Preview_01_main"
+      grid_position: [0, 1]  # Bottom-left
+    cam04:
+      url: "rtsp://192.168.0.182:554/main/av"
+      grid_position: [1, 1]  # Bottom-center
+    cam05:
+      url: "rtsp://admin:Carbonneutral1!@192.168.0.3:554/h264Preview_01_main"
+      grid_position: [2, 1]  # Bottom-right
+
 # Module Configurations
 modules:
   NI_cDAQ_Analog:

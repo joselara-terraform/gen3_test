@@ -1,14 +1,28 @@
 # Start cameras and arrange in 2x3 grid on 3440x1440 monitor
 $VLC = "C:\Program Files\VideoLAN\VLC\vlc.exe"
 
-# Camera URLs (5 cameras - removed 192.168.0.101)
-$cameras = @(
-    "rtsp://192.168.0.180:554/main/av",
-    "rtsp://192.168.0.181:554/main/av",
-    "rtsp://192.168.0.182:554/main/av",
-    "rtsp://admin:Carbonneutral1!@192.168.0.100:554/h264Preview_01_main",
-    "rtsp://admin:Carbonneutral1!@192.168.0.3:554/h264Preview_01_main"
-)
+# Install powershell-yaml if not present
+if (-not (Get-Module -ListAvailable -Name powershell-yaml)) {
+    Write-Host "Installing powershell-yaml module..."
+    Install-Module -Name powershell-yaml -Force -Scope CurrentUser -ErrorAction SilentlyContinue
+}
+
+# Import YAML module
+Import-Module powershell-yaml -ErrorAction SilentlyContinue
+
+# Load camera configuration from devices.yaml
+$configPath = Join-Path $PSScriptRoot "..\MK1_AWE\config\devices.yaml"
+$configYaml = Get-Content $configPath -Raw
+$config = ConvertFrom-Yaml $configYaml
+
+# Extract camera URLs in order (cam01-cam05)
+$cameras = @()
+foreach ($camId in @('cam01', 'cam02', 'cam03', 'cam04', 'cam05')) {
+    $camUrl = $config.devices.cameras.$camId.url
+    $cameras += $camUrl
+}
+
+Write-Host "Loaded $($cameras.Count) cameras from devices.yaml"
 
 # Grid positions for 2x3 layout on 2nd monitor (3440x1440)
 # Monitor offset: 3440 pixels (moves to 2nd screen)
