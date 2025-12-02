@@ -12,21 +12,18 @@ $cameras = @(
 
 # Grid positions for 2x3 layout on 2nd monitor (3440x1440)
 # Monitor offset: 3440 pixels (moves to 2nd screen)
-# Position (1,0) is reserved for GUI
+# Position [0,0] is reserved for GUI
 $monitor_offset = 3440
 $width = 1147
 $height = 720
 $positions = @(
-    @{X=$monitor_offset+0;    Y=0;   W=$width; H=$height},  # (0,0) Cam1
-    # (1,0) is GUI position - skip
-    @{X=$monitor_offset+2294; Y=0;   W=$width; H=$height},  # (2,0) Cam2
-    @{X=$monitor_offset+0;    Y=720; W=$width; H=$height},  # (0,1) Cam3
-    @{X=$monitor_offset+1147; Y=720; W=$width; H=$height},  # (1,1) Cam4
-    @{X=$monitor_offset+2294; Y=720; W=$width; H=$height}   # (2,1) Cam5
+    # [0,0] is GUI position - skip
+    @{X=$monitor_offset+1147; Y=0;   W=$width; H=$height},  # [1,0] Cam1
+    @{X=$monitor_offset+2294; Y=0;   W=$width; H=$height},  # [2,0] Cam2
+    @{X=$monitor_offset+0;    Y=720; W=$width; H=$height},  # [0,1] Cam3
+    @{X=$monitor_offset+1147; Y=720; W=$width; H=$height},  # [1,1] Cam4
+    @{X=$monitor_offset+2294; Y=720; W=$width; H=$height}   # [2,1] Cam5
 )
-
-# GUI position (exported for GUI to use)
-$global:GUI_POSITION = @{X=$monitor_offset+1147; Y=0; W=$width; H=$height}  # (1,0) Top-center
 
 # Windows API for window positioning
 Add-Type @"
